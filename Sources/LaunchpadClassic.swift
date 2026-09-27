@@ -619,7 +619,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private var activeFolderID: String?
     private var contextRef: TileRef?
     private var hiddenMenuIDs: [String] = []
-    private var statusItem: NSStatusItem!
+    private var statusItem: NSStatusItem?
     private var hotkeyManager: HotkeyManager!
     private var currentShortcut: Shortcut = .fallback
     private var cornerEnteredAt: Date?
@@ -720,14 +720,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         applyTheme()
         model = LauncherModel()
         refreshGrid()
-        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        if let image = LauncherIcon.original()?.copy() as? NSImage {
-            image.size = NSSize(width: 18, height: 18)
-            statusItem.button?.image = image
-        } else { statusItem.button?.title = "▦" }
-        statusItem.button?.toolTip = "启动台"
-        statusItem.button?.target = self
-        statusItem.button?.action = #selector(toggleLauncher(_:))
+        updateStatusItemVisibility()
         hotkeyManager = HotkeyManager()
         hotkeyManager.onPressed = { [weak self] in self?.toggleLauncher(nil) }
         let savedCode = store.data.preferences.hotkeyCode ?? 0
@@ -817,6 +810,24 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         window.appearance = theme.appearance
         grid.needsDisplay = true
         pageIndicator?.needsDisplay = true
+    }
+
+    private func updateStatusItemVisibility() {
+        if store.data.preferences.showMenuBarIcon {
+            guard statusItem == nil else { return }
+            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+            if let image = LauncherIcon.original()?.copy() as? NSImage {
+                image.size = NSSize(width: 18, height: 18)
+                item.button?.image = image
+            } else { item.button?.title = "▦" }
+            item.button?.toolTip = "启动台"
+            item.button?.target = self
+            item.button?.action = #selector(toggleLauncher(_:))
+            statusItem = item
+        } else if let statusItem {
+            NSStatusBar.system.removeStatusItem(statusItem)
+            self.statusItem = nil
+        }
     }
 
     private func updatePageIndicator() {
@@ -1016,6 +1027,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         }
         row("开机自启动", control: check(LoginStartup.shared.needsApproval ? "需要系统允许" : "登录时静默运行",
                                         state: loginRegistered, action: #selector(toggleLaunchAtLogin(_:))))
+        row("菜单栏图标", control: check("显示菜单栏图标", state: store.data.preferences.showMenuBarIcon,
+                                     action: #selector(toggleMenuBarIcon(_:))))
         row("图标排序", control: check("锁定布局", state: store.data.preferences.lockLayout,
                                     action: #selector(toggleLayoutLock(_:))))
         row("搜索栏", control: check("显示快速刷新按钮", state: store.data.preferences.showQuickRefreshButton,
@@ -1117,6 +1130,12 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         let locked = !store.data.preferences.lockLayout
         store.updatePreferences { $0.lockLayout = locked }
         grid.layoutLocked = locked
+        scheduleSettingsPanelRefresh()
+    }
+
+    @objc private func toggleMenuBarIcon(_ sender: NSButton) {
+        store.updatePreferences { $0.showMenuBarIcon = sender.state == .on }
+        updateStatusItemVisibility()
         scheduleSettingsPanelRefresh()
     }
 
@@ -1456,6 +1475,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             guard store.data.preferences.gridLayout == "7×7",
                   store.data.preferences.hotCorner == "topLeft",
                   store.data.preferences.theme == "system",
+                  store.data.preferences.showMenuBarIcon,
                   FileManager.default.fileExists(atPath: storeURL.path),
                   (try? FileManager.default.attributesOfItem(atPath: storeURL.path)[.posixPermissions] as? Int) == 0o600 else {
                 fatalError("Legacy preferences migration failed")
@@ -1465,6 +1485,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                 $0.hotkeyCode = 37
                 $0.hotkeyModifiers = 2304
                 $0.launchAtLogin = true
+                $0.showMenuBarIcon = false
                 $0.lockLayout = true
                 $0.showQuickRefreshButton = true
                 $0.theme = "dark"
@@ -1510,6 +1531,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                   reloadedStore.data.preferences.hotkeyCode == 37,
                   reloadedStore.data.preferences.hotkeyModifiers == 2304,
                   reloadedStore.data.preferences.launchAtLogin,
+                  !reloadedStore.data.preferences.showMenuBarIcon,
                   reloadedStore.data.preferences.lockLayout,
                   reloadedStore.data.preferences.showQuickRefreshButton,
                   reloadedStore.data.preferences.theme == "dark" else {

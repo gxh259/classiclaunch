@@ -1,6 +1,6 @@
 cask "classiclaunch" do
-  version "0.28"
-  sha256 "aeaadfd29152fc2429dd5914351e96b20cad98ba98cee04f5947670eb160219c"
+  version "0.29"
+  sha256 "80fd57394d11820b83dbf35752e6708a2c0eac8dce21a78b77dbb59161f5ce2a"
 
   url "https://github.com/gxh259/classiclaunch/releases/download/v#{version}/ClassicLaunchpad-#{version}-universal.zip"
   name "启动台"

@@ -8,6 +8,7 @@ struct LauncherPreferences: Codable {
     var hotkeyLabel: String?
     var hotCorner = "off"
     var launchAtLogin = false
+    var showMenuBarIcon = true
     var lockLayout = false
     var showQuickRefreshButton = false
     var theme = "system"
@@ -16,7 +17,7 @@ struct LauncherPreferences: Codable {
 
     private enum CodingKeys: String, CodingKey {
         case gridLayout, includeDockSystemApps, hotkeyCode, hotkeyModifiers, hotkeyLabel, hotCorner
-        case launchAtLogin, lockLayout, showQuickRefreshButton, theme
+        case launchAtLogin, showMenuBarIcon, lockLayout, showQuickRefreshButton, theme
     }
 
     init(from decoder: Decoder) throws {
@@ -28,6 +29,7 @@ struct LauncherPreferences: Codable {
         hotkeyLabel = try values.decodeIfPresent(String.self, forKey: .hotkeyLabel)
         hotCorner = try values.decodeIfPresent(String.self, forKey: .hotCorner) ?? "off"
         launchAtLogin = try values.decodeIfPresent(Bool.self, forKey: .launchAtLogin) ?? false
+        showMenuBarIcon = try values.decodeIfPresent(Bool.self, forKey: .showMenuBarIcon) ?? true
         lockLayout = try values.decodeIfPresent(Bool.self, forKey: .lockLayout) ?? false
         showQuickRefreshButton = try values.decodeIfPresent(Bool.self, forKey: .showQuickRefreshButton) ?? false
         theme = try values.decodeIfPresent(String.self, forKey: .theme) ?? "system"
