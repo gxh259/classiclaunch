@@ -109,6 +109,13 @@ final class LauncherModel {
 
     func title(for id: String) -> String { state.aliases[id] ?? apps[id]?.name ?? id }
 
+    func folderTitle(for id: String) -> String {
+        guard let folder = state.folders[id] else { return L("文件夹") }
+        if id == utilitiesFolderIDForDisplay && folder.name == "其他" { return L("其他") }
+        if folder.name == "新建文件夹" { return L("新建文件夹") }
+        return folder.name
+    }
+
     func tiles(in folderID: String? = nil, query: String = "") -> [DisplayTile] {
         if !query.isEmpty {
             return apps.values.filter { app in
@@ -128,7 +135,7 @@ final class LauncherModel {
             guard let folder = state.folders[ref.id] else { return nil }
             let icons = Array(folder.apps.compactMap { apps[$0]?.icon }.prefix(9))
             guard !icons.isEmpty else { return nil }
-            return DisplayTile(ref: ref, title: folder.name, icons: icons)
+            return DisplayTile(ref: ref, title: folderTitle(for: ref.id), icons: icons)
         }
     }
 

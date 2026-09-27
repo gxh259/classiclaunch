@@ -12,12 +12,13 @@ struct LauncherPreferences: Codable {
     var lockLayout = false
     var showQuickRefreshButton = false
     var theme = "system"
+    var language = "system"
 
     init() {}
 
     private enum CodingKeys: String, CodingKey {
         case gridLayout, includeDockSystemApps, hotkeyCode, hotkeyModifiers, hotkeyLabel, hotCorner
-        case launchAtLogin, showMenuBarIcon, lockLayout, showQuickRefreshButton, theme
+        case launchAtLogin, showMenuBarIcon, lockLayout, showQuickRefreshButton, theme, language
     }
 
     init(from decoder: Decoder) throws {
@@ -33,6 +34,7 @@ struct LauncherPreferences: Codable {
         lockLayout = try values.decodeIfPresent(Bool.self, forKey: .lockLayout) ?? false
         showQuickRefreshButton = try values.decodeIfPresent(Bool.self, forKey: .showQuickRefreshButton) ?? false
         theme = try values.decodeIfPresent(String.self, forKey: .theme) ?? "system"
+        language = try values.decodeIfPresent(String.self, forKey: .language) ?? "system"
     }
 }
 

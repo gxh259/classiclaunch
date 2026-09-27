@@ -26,6 +26,7 @@ build_arch() {
     -framework ServiceManagement \
     -framework QuartzCore \
     Sources/LauncherStore.swift \
+    Sources/Localization.swift \
     Sources/LoginStartup.swift \
     Sources/LauncherModel.swift \
     Sources/Hotkey.swift \
@@ -47,6 +48,7 @@ lipo -verify_arch arm64 "$APP_DIR/Contents/MacOS/ClassicLaunchpad"
 lipo -verify_arch x86_64 "$APP_DIR/Contents/MacOS/ClassicLaunchpad"
 cp Resources/Info.plist "$APP_DIR/Contents/Info.plist"
 cp "$BUILD_DIR/AppIcon.icns" Resources/AppIcon.png "$APP_DIR/Contents/Resources/"
+cp -R Resources/en.lproj Resources/zh-Hant.lproj "$APP_DIR/Contents/Resources/"
 codesign --force --sign - "$APP_DIR"
 
 cp -R "$APP_DIR" "$PACKAGE_DIR/启动台.app"

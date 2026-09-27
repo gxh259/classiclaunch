@@ -44,7 +44,7 @@ final class LoginStartup {
         guard appURL.standardizedFileURL.deletingLastPathComponent().path == applicationsDirectory.standardizedFileURL.path,
               FileManager.default.isExecutableFile(atPath: executable) else {
             throw NSError(domain: "ClassicLaunchpad", code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "请先将“启动台.app”安装到“应用程序”文件夹。"])
+                userInfo: [NSLocalizedDescriptionKey: L("请先将“启动台.app”安装到“应用程序”文件夹。")])
         }
         if registration.status != .enabled && registration.status != .requiresApproval {
             try registration.register()
@@ -53,10 +53,10 @@ final class LoginStartup {
             if hasLegacyAgent { try FileManager.default.removeItem(at: agentURL) }
         } else if registration.status == .requiresApproval {
             throw NSError(domain: "ClassicLaunchpad", code: 2,
-                userInfo: [NSLocalizedDescriptionKey: "请在系统设置的“登录项”中允许启动台，随后再次打开启动台以完成旧登录项迁移。"])
+                userInfo: [NSLocalizedDescriptionKey: L("请在系统设置的“登录项”中允许启动台，随后再次打开启动台以完成旧登录项迁移。")])
         } else {
             throw NSError(domain: "ClassicLaunchpad", code: 3,
-                userInfo: [NSLocalizedDescriptionKey: "系统未确认开机自启动，请重新尝试或在系统登录项设置中检查。"])
+                userInfo: [NSLocalizedDescriptionKey: L("系统未确认开机自启动，请重新尝试或在系统登录项设置中检查。")])
         }
     }
 

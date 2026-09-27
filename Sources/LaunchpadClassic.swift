@@ -53,9 +53,9 @@ enum LauncherTheme: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .light: "明亮"
-        case .dark: "黑暗"
-        case .system: "跟随系统"
+        case .light: L("明亮")
+        case .dark: L("黑暗")
+        case .system: L("跟随系统")
         }
     }
 
@@ -88,15 +88,15 @@ final class RenamePanel: NSPanel {
         isFloatingPanel = true
         hidesOnDeactivate = false
         center()
-        let label = NSTextField(labelWithString: "名称")
+        let label = NSTextField(labelWithString: L("名称"))
         label.frame = NSRect(x: 24, y: 108, width: 352, height: 24)
         contentView?.addSubview(label)
         nameField.stringValue = currentName
         contentView?.addSubview(nameField)
-        let cancel = NSButton(title: "取消", target: self, action: #selector(cancelRename(_:)))
+        let cancel = NSButton(title: L("取消"), target: self, action: #selector(cancelRename(_:)))
         cancel.frame = NSRect(x: 216, y: 18, width: 76, height: 32)
         contentView?.addSubview(cancel)
-        let save = NSButton(title: "保存", target: self, action: #selector(saveRename(_:)))
+        let save = NSButton(title: L("保存"), target: self, action: #selector(saveRename(_:)))
         save.keyEquivalent = "\r"
         save.frame = NSRect(x: 300, y: 18, width: 76, height: 32)
         contentView?.addSubview(save)
@@ -518,7 +518,7 @@ final class GridView: NSView {
         }
         if tiles.isEmpty && statusMessage == nil {
             let style = NSMutableParagraphStyle(); style.alignment = .center
-            ("没有找到应用" as NSString).draw(in: NSRect(x: 0, y: bounds.midY, width: bounds.width, height: 40),
+            (L("没有找到应用") as NSString).draw(in: NSRect(x: 0, y: bounds.midY, width: bounds.width, height: 40),
                 withAttributes: [.font: NSFont.systemFont(ofSize: 20),
                                  .foregroundColor: labelColor, .paragraphStyle: style])
         }
@@ -638,7 +638,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         window.backgroundColor = NSColor(calibratedWhite: 0.23, alpha: 1)
         window.isOpaque = true
         window.hasShadow = false
-        window.title = "启动台"
+        window.title = L("启动台")
         grid = GridView(frame: NSRect(origin: .zero, size: frame.size))
         grid.wantsLayer = true
         grid.dockBottomInset = max(0, screen.visibleFrame.minY - frame.minY)
@@ -682,21 +682,21 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         grid.onPageChanged = { [weak self] in self?.updatePageIndicator() }
         search = NSSearchField(frame: NSRect(x: (frame.width - 360) / 2,
                                            y: frame.height - 105, width: 360, height: 36))
-        search.placeholderString = "搜索应用"
+        search.placeholderString = L("搜索应用")
         search.delegate = self
         search.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
         backdrop.addSubview(search)
         settingsButton = NSButton(frame: NSRect(x: (frame.width - 360) / 2 + 370,
                                                 y: frame.height - 103, width: 36, height: 32))
         settingsButton.bezelStyle = .regularSquare
-        if let gear = NSImage(systemSymbolName: "gearshape", accessibilityDescription: "设置") {
+        if let gear = NSImage(systemSymbolName: "gearshape", accessibilityDescription: L("设置")) {
             settingsButton.image = gear.withSymbolConfiguration(
                 NSImage.SymbolConfiguration(pointSize: 20, weight: .medium)) ?? gear
             settingsButton.imagePosition = .imageOnly
         } else { settingsButton.title = "⚙" }
         settingsButton.isBordered = false
         settingsButton.contentTintColor = .labelColor
-        settingsButton.toolTip = "设置"
+        settingsButton.toolTip = L("设置")
         settingsButton.target = self
         settingsButton.action = #selector(showSettings(_:))
         settingsButton.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
@@ -704,14 +704,14 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         refreshButton = NSButton(frame: NSRect(x: (frame.width - 360) / 2 + 412,
                                                y: frame.height - 103, width: 36, height: 32))
         refreshButton.bezelStyle = .regularSquare
-        if let refresh = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "重新扫描应用") {
+        if let refresh = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: L("重新扫描应用")) {
             refreshButton.image = refresh.withSymbolConfiguration(
                 NSImage.SymbolConfiguration(pointSize: 19, weight: .medium)) ?? refresh
             refreshButton.imagePosition = .imageOnly
         } else { refreshButton.title = "↻" }
         refreshButton.isBordered = false
         refreshButton.contentTintColor = .labelColor
-        refreshButton.toolTip = "重新扫描应用"
+        refreshButton.toolTip = L("重新扫描应用")
         refreshButton.target = self
         refreshButton.action = #selector(rescan(_:))
         refreshButton.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
@@ -727,11 +727,13 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         let savedModifiers = store.data.preferences.hotkeyModifiers ?? 0
         if savedCode > 0 && savedModifiers > 0 {
             currentShortcut = Shortcut(keyCode: UInt32(savedCode), modifiers: UInt32(savedModifiers),
-                label: store.data.preferences.hotkeyLabel ?? "快捷键")
+                label: store.data.preferences.hotkeyLabel ?? L("快捷键"))
         }
         if !hotkeyManager.register(currentShortcut) { NSLog("Could not register global shortcut") }
         Timer.scheduledTimer(timeInterval: 0.2, target: self, selector: #selector(checkHotCorner(_:)),
                              userInfo: nil, repeats: true)
+        NotificationCenter.default.addObserver(self, selector: #selector(systemLocaleDidChange(_:)),
+                                               name: NSLocale.currentLocaleDidChangeNotification, object: nil)
         if !launchedAtLogin { show() }
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self else { return event }
@@ -763,14 +765,14 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         guard appURL.pathExtension.lowercased() == "app",
               appURL.deletingLastPathComponent().path != "/Applications" else { return false }
         let alert = NSAlert()
-        alert.messageText = "安装启动台"
+        alert.messageText = L("安装启动台")
         let hasShortcut = FileManager.default.fileExists(atPath:
             appURL.deletingLastPathComponent().appendingPathComponent("应用程序").path)
         alert.informativeText = hasShortcut
-            ? "请将“启动台.app”拖到解压目录里的“应用程序”快捷方式。安装完成后，从“应用程序”打开启动台。"
-            : "请在访达中将“启动台.app”拖到“应用程序”（/Applications）。安装完成后，从“应用程序”打开启动台。"
-        alert.addButton(withTitle: "在访达中显示")
-        alert.addButton(withTitle: "暂时运行")
+            ? L("请将“启动台.app”拖到解压目录里的“应用程序”快捷方式。安装完成后，从“应用程序”打开启动台。")
+            : L("请在访达中将“启动台.app”拖到“应用程序”（/Applications）。安装完成后，从“应用程序”打开启动台。")
+        alert.addButton(withTitle: L("在访达中显示"))
+        alert.addButton(withTitle: L("暂时运行"))
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {
             NSWorkspace.shared.activateFileViewerSelecting([appURL])
@@ -812,6 +814,27 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         pageIndicator?.needsDisplay = true
     }
 
+    private func applyLanguage() {
+        window.title = L("启动台")
+        search.placeholderString = L("搜索应用")
+        settingsButton.toolTip = L("设置")
+        refreshButton.toolTip = L("重新扫描应用")
+        statusItem?.button?.toolTip = L("启动台")
+        settingsPanel?.title = L("启动台设置")
+        NSApp.mainMenu?.items.first?.submenu?.items.first?.title = L("退出启动台")
+        scanFeedbackTimer?.invalidate()
+        grid.statusMessage = nil
+        let previousPage = grid.page
+        refreshGrid()
+        grid.page = min(previousPage, grid.numberOfPages - 1)
+    }
+
+    @objc private func systemLocaleDidChange(_ notification: Notification) {
+        guard store.data.preferences.language == LauncherLanguage.system.rawValue else { return }
+        applyLanguage()
+        scheduleSettingsPanelRefresh()
+    }
+
     private func updateStatusItemVisibility() {
         if store.data.preferences.showMenuBarIcon {
             guard statusItem == nil else { return }
@@ -820,7 +843,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                 image.size = NSSize(width: 18, height: 18)
                 item.button?.image = image
             } else { item.button?.title = "▦" }
-            item.button?.toolTip = "启动台"
+            item.button?.toolTip = L("启动台")
             item.button?.target = self
             item.button?.action = #selector(toggleLauncher(_:))
             statusItem = item
@@ -852,7 +875,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         let query = search.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
         grid.tiles = model.tiles(in: activeFolderID, query: query)
         grid.folderMode = activeFolderID != nil
-        grid.folderName = activeFolderID.flatMap { model.state.folders[$0]?.name } ?? ""
+        grid.folderName = activeFolderID.map { model.folderTitle(for: $0) } ?? ""
         updatePageIndicator()
         search.isHidden = activeFolderID != nil
         settingsButton.isHidden = activeFolderID != nil
@@ -931,9 +954,9 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             settingsPanel.makeKeyAndOrderFront(nil)
             return
         }
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 560, height: 610),
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 680, height: 610),
                             styleMask: [.titled, .closable], backing: .buffered, defer: false)
-        panel.title = "启动台设置"
+        panel.title = L("启动台设置")
         panel.appearance = NSAppearance(named: .aqua)
         panel.backgroundColor = .white
         panel.isOpaque = true
@@ -942,9 +965,9 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         panel.isReleasedWhenClosed = false
         panel.level = NSWindow.Level(rawValue: window.level.rawValue + 1)
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.setFrameOrigin(NSPoint(x: window.frame.midX - 280, y: window.frame.midY - 305))
+        panel.setFrameOrigin(NSPoint(x: window.frame.midX - 340, y: window.frame.midY - 305))
         panel.delegate = self
-        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 560, height: 610))
+        let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 680, height: 610))
         scroll.autoresizingMask = [.width, .height]
         scroll.hasVerticalScroller = true
         scroll.drawsBackground = true
@@ -960,7 +983,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private func refreshSettingsPanel() {
         guard let scroll = settingsScrollView else { return }
         let previousOffset = scroll.contentView.bounds.minY
-        let canvas = SettingsCanvas(frame: NSRect(x: 0, y: 0, width: 540, height: 820))
+        let canvas = SettingsCanvas(frame: NSRect(x: 0, y: 0, width: 660, height: 820))
         canvas.wantsLayer = true
         canvas.layer?.backgroundColor = NSColor.white.cgColor
         var y: CGFloat = 22
@@ -975,12 +998,12 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         }
         func section(_ title: String) {
             y += 12
-            label(title, x: 24, width: 500, size: 15, bold: true)
+            label(title, x: 24, width: 620, size: 15, bold: true)
             y += 32
         }
         func row(_ title: String, control: NSView) {
-            label(title, x: 26, width: 270, size: 13)
-            control.frame = NSRect(x: 310, y: y - 3, width: 216, height: 30)
+            label(title, x: 26, width: 300, size: 13)
+            control.frame = NSRect(x: 340, y: y - 3, width: 306, height: 30)
             canvas.addSubview(control)
             y += 45
         }
@@ -993,12 +1016,23 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             return control
         }
 
-        label("设置", x: 24, width: 500, size: 24, bold: true)
+        label(L("设置"), x: 24, width: 620, size: 24, bold: true)
         y += 35
-        label("调整启动台的外观、应用与启动方式", x: 24, width: 500, size: 12)
+        label(L("调整启动台的外观、应用与启动方式"), x: 24, width: 620, size: 12)
         y += 32
 
-        section("外观")
+        section(L("外观"))
+        let languagePopup = NSPopUpButton(frame: .zero, pullsDown: false)
+        for language in LauncherLanguage.allCases {
+            languagePopup.addItem(withTitle: language.title)
+            languagePopup.lastItem?.representedObject = language.rawValue
+        }
+        languagePopup.selectItem(withTitle:
+            (LauncherLanguage(rawValue: store.data.preferences.language) ?? .system).title)
+        languagePopup.target = self
+        languagePopup.action = #selector(changeLanguage(_:))
+        row(L("语言"), control: languagePopup)
+
         let themePopup = NSPopUpButton(frame: .zero, pullsDown: false)
         for theme in LauncherTheme.allCases {
             themePopup.addItem(withTitle: theme.title)
@@ -1008,7 +1042,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         themePopup.selectItem(withTitle: selectedTheme.title)
         themePopup.target = self
         themePopup.action = #selector(changeTheme(_:))
-        row("主题", control: themePopup)
+        row(L("主题"), control: themePopup)
 
         let layoutPopup = NSPopUpButton(frame: .zero, pullsDown: false)
         for layout in GridLayout.allCases {
@@ -1018,29 +1052,29 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         layoutPopup.selectItem(withTitle: grid.layout.rawValue)
         layoutPopup.target = self
         layoutPopup.action = #selector(changeLayout(_:))
-        row("网格布局", control: layoutPopup)
+        row(L("网格布局"), control: layoutPopup)
 
-        section("启动与行为")
+        section(L("启动与行为"))
         let loginRegistered = LoginStartup.shared.isEnabled
         if store.data.preferences.launchAtLogin != loginRegistered {
             store.updatePreferences { $0.launchAtLogin = loginRegistered }
         }
-        row("开机自启动", control: check(LoginStartup.shared.needsApproval ? "需要系统允许" : "登录时静默运行",
+        row(L("开机自启动"), control: check(LoginStartup.shared.needsApproval ? L("需要系统允许") : L("登录时静默运行"),
                                         state: loginRegistered, action: #selector(toggleLaunchAtLogin(_:))))
-        row("菜单栏图标", control: check("显示菜单栏图标", state: store.data.preferences.showMenuBarIcon,
+        row(L("菜单栏图标"), control: check(L("显示菜单栏图标"), state: store.data.preferences.showMenuBarIcon,
                                      action: #selector(toggleMenuBarIcon(_:))))
-        row("图标排序", control: check("锁定布局", state: store.data.preferences.lockLayout,
+        row(L("图标排序"), control: check(L("锁定布局"), state: store.data.preferences.lockLayout,
                                     action: #selector(toggleLayoutLock(_:))))
-        row("搜索栏", control: check("显示快速刷新按钮", state: store.data.preferences.showQuickRefreshButton,
+        row(L("搜索栏"), control: check(L("显示快速刷新按钮"), state: store.data.preferences.showQuickRefreshButton,
                                   action: #selector(toggleQuickRefreshButton(_:))))
-        row("应用来源", control: check("包含 Dock 数据库中的系统应用",
+        row(L("应用来源"), control: check(L("包含 Dock 数据库中的系统应用"),
                                     state: AppCatalog.includeDockSystemApps,
                                     action: #selector(toggleDockSystemApps(_:))))
 
-        section("应用")
-        row("应用列表", control: button("重新扫描应用", action: #selector(rescan(_:))))
+        section(L("应用"))
+        row(L("应用列表"), control: button(L("重新扫描应用"), action: #selector(rescan(_:))))
         let hiddenPopup = NSPopUpButton(frame: .zero, pullsDown: false)
-        hiddenPopup.addItem(withTitle: "选择要恢复的应用")
+        hiddenPopup.addItem(withTitle: L("选择要恢复的应用"))
         hiddenMenuIDs = model.state.hidden.sorted { model.title(for: $0) < model.title(for: $1) }
         for id in hiddenMenuIDs {
             hiddenPopup.addItem(withTitle: model.title(for: id))
@@ -1049,30 +1083,30 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         hiddenPopup.isEnabled = !hiddenMenuIDs.isEmpty
         hiddenPopup.target = self
         hiddenPopup.action = #selector(restoreHidden(_:))
-        row("恢复隐藏的应用", control: hiddenPopup)
+        row(L("恢复隐藏的应用"), control: hiddenPopup)
 
-        section("快捷操作")
-        row("全局快捷键", control: button("\(currentShortcut.label)…", action: #selector(configureShortcut(_:))))
+        section(L("快捷操作"))
+        row(L("全局快捷键"), control: button("\(currentShortcut.localizedLabel)…", action: #selector(configureShortcut(_:))))
         let cornerPopup = NSPopUpButton(frame: .zero, pullsDown: false)
-        for (value, title) in [("off", "关闭"), ("topLeft", "左上角"), ("topRight", "右上角"),
-                               ("bottomLeft", "左下角"), ("bottomRight", "右下角")] {
+        for (value, title) in [("off", L("关闭")), ("topLeft", L("左上角")), ("topRight", L("右上角")),
+                               ("bottomLeft", L("左下角")), ("bottomRight", L("右下角"))] {
             cornerPopup.addItem(withTitle: title)
             cornerPopup.lastItem?.representedObject = value
             if store.data.preferences.hotCorner == value { cornerPopup.selectItem(at: cornerPopup.numberOfItems - 1) }
         }
         cornerPopup.target = self
         cornerPopup.action = #selector(selectCorner(_:))
-        row("触发角", control: cornerPopup)
+        row(L("触发角"), control: cornerPopup)
 
-        section("系统")
-        row("登录项", control: button("打开系统登录项设置…", action: #selector(openLoginItemsSettings(_:))))
-        row("应用数据", control: button("打开数据文件夹", action: #selector(openDataFolder(_:))))
-        row("卸载", control: button("完全卸载启动台…", action: #selector(uninstallLauncher(_:))))
+        section(L("系统"))
+        row(L("登录项"), control: button(L("打开系统登录项设置…"), action: #selector(openLoginItemsSettings(_:))))
+        row(L("应用数据"), control: button(L("打开数据文件夹"), action: #selector(openDataFolder(_:))))
+        row(L("卸载"), control: button(L("完全卸载启动台…"), action: #selector(uninstallLauncher(_:))))
         y += 8
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
-        label("启动台 \(version)", x: 26, width: 300, size: 12)
-        let done = button("完成", action: #selector(closeSettingsAction(_:)))
-        done.frame = NSRect(x: 448, y: y - 5, width: 78, height: 30)
+        label(Localization.format("启动台 %@", version), x: 26, width: 300, size: 12)
+        let done = button(L("完成"), action: #selector(closeSettingsAction(_:)))
+        done.frame = NSRect(x: 568, y: y - 5, width: 78, height: 30)
         canvas.addSubview(done)
         y += 44
 
@@ -1099,6 +1133,14 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         scheduleSettingsPanelRefresh()
     }
 
+    @objc private func changeLanguage(_ sender: NSPopUpButton) {
+        guard let raw = sender.selectedItem?.representedObject as? String,
+              LauncherLanguage(rawValue: raw) != nil else { return }
+        store.updatePreferences { $0.language = raw }
+        applyLanguage()
+        scheduleSettingsPanelRefresh()
+    }
+
     @objc private func toggleLaunchAtLogin(_ sender: Any?) {
         if LoginStartup.shared.needsApproval {
             closeSettingsPanel()
@@ -1115,7 +1157,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                 store.updatePreferences { $0.launchAtLogin = true }
             }
         } catch {
-            showSettingAlert("无法更改开机自启动", error.localizedDescription)
+            showSettingAlert(L("无法更改开机自启动"), error.localizedDescription)
         }
         scheduleSettingsPanelRefresh()
     }
@@ -1156,22 +1198,22 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         let appURL = Bundle.main.bundleURL.standardizedFileURL
         guard appURL.pathExtension.lowercased() == "app",
               appURL.deletingLastPathComponent().path == "/Applications" else {
-            showSettingAlert("无法卸载", "请先将“启动台.app”安装到“应用程序”，再从设置中运行完整卸载。")
+            showSettingAlert(L("无法卸载"), L("请先将“启动台.app”安装到“应用程序”，再从设置中运行完整卸载。"))
             return
         }
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "完全卸载启动台？"
-        alert.informativeText = "将“启动台.app”移到废纸篓，并删除图标排序、文件夹、应用别名、隐藏状态和其他设置；同时移除开机自启动。此操作无法撤销。"
-        alert.addButton(withTitle: "卸载并删除数据")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = L("完全卸载启动台？")
+        alert.informativeText = L("将“启动台.app”移到废纸篓，并删除图标排序、文件夹、应用别名、隐藏状态和其他设置；同时移除开机自启动。此操作无法撤销。")
+        alert.addButton(withTitle: L("卸载并删除数据"))
+        alert.addButton(withTitle: L("取消"))
         alert.window.level = NSWindow.Level(rawValue: window.level.rawValue + 2)
         guard alert.runModal() == .alertFirstButtonReturn else { return }
 
         do {
             try LoginStartup.shared.disable()
         } catch {
-            showSettingAlert("无法移除登录项", error.localizedDescription)
+            showSettingAlert(L("无法移除登录项"), error.localizedDescription)
             return
         }
 
@@ -1179,11 +1221,11 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             DispatchQueue.main.async {
                 guard let self else { return }
                 if let error {
-                    self.showSettingAlert("无法移到废纸篓", error.localizedDescription)
+                    self.showSettingAlert(L("无法移到废纸篓"), error.localizedDescription)
                     return
                 }
                 guard moved[appURL] != nil else {
-                    self.showSettingAlert("无法移到废纸篓", "访达没有确认移动“启动台.app”，应用数据尚未删除。")
+                    self.showSettingAlert(L("无法移到废纸篓"), L("访达没有确认移动“启动台.app”，应用数据尚未删除。"))
                     return
                 }
                 do {
@@ -1192,7 +1234,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                     self.window.orderOut(nil)
                     NSApp.terminate(nil)
                 } catch {
-                    self.showSettingAlert("应用已移到废纸篓，但未清理完数据", error.localizedDescription)
+                    self.showSettingAlert(L("应用已移到废纸篓，但未清理完数据"), error.localizedDescription)
                 }
             }
         }
@@ -1225,15 +1267,16 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         search.stringValue = ""
         model.clearLoadedCatalog()
         grid.tiles = []
-        grid.statusMessage = "正在清理缓存并重新扫描应用…"
+        grid.statusMessage = L("正在清理缓存并重新扫描应用…")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
             guard let self else { return }
             self.model.reloadCatalog()
             self.refreshGrid()
             let database = AppCatalog.lastDockDatabaseOpened
-                ? "数据库 \(AppCatalog.lastDockAppCount) 条"
-                : "数据库不可用"
-            self.grid.statusMessage = "已加载 \(self.model.apps.count) 个 · /Applications \(AppCatalog.lastApplicationsCount) 项 · \(database)"
+                ? Localization.format("数据库 %d 条", AppCatalog.lastDockAppCount)
+                : L("数据库不可用")
+            self.grid.statusMessage = Localization.format("已加载 %d 个 · /Applications %d 项 · %@",
+                                                          self.model.apps.count, AppCatalog.lastApplicationsCount, database)
             self.scanFeedbackTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: false) { [weak self] _ in
                 self?.grid.statusMessage = nil
             }
@@ -1242,10 +1285,10 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
     @objc private func configureShortcut(_ sender: Any?) {
         let alert = NSAlert()
-        alert.messageText = "设置全局快捷键"
-        alert.informativeText = "点击下方区域，再按下包含 Control、Option 或 Command 的组合键。"
-        alert.addButton(withTitle: "保存")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = L("设置全局快捷键")
+        alert.informativeText = L("点击下方区域，再按下包含 Control、Option 或 Command 的组合键。")
+        alert.addButton(withTitle: L("保存"))
+        alert.addButton(withTitle: L("取消"))
         let recorder = ShortcutRecorder(frame: NSRect(x: 0, y: 0, width: 300, height: 40))
         recorder.shortcut = currentShortcut
         alert.accessoryView = recorder
@@ -1255,8 +1298,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         guard hotkeyManager.register(shortcut) else {
             hotkeyManager.register(previous)
             let error = NSAlert()
-            error.messageText = "无法使用这个快捷键"
-            error.informativeText = "可能已被系统或其他应用占用，请换一个组合键。"
+            error.messageText = L("无法使用这个快捷键")
+            error.informativeText = L("可能已被系统或其他应用占用，请换一个组合键。")
             error.window.level = NSWindow.Level(rawValue: window.level.rawValue + 2)
             error.runModal()
             return
@@ -1303,22 +1346,22 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         contextRef = tile.ref
         let menu = NSMenu()
         if tile.ref.kind == "app" {
-            menu.addItem(withTitle: "打开", action: #selector(contextOpen(_:)), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "重命名", action: #selector(contextRename(_:)), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "隐藏应用", action: #selector(contextHide(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("打开"), action: #selector(contextOpen(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("重命名"), action: #selector(contextRename(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("隐藏应用"), action: #selector(contextHide(_:)), keyEquivalent: "").target = self
             if activeFolderID != nil {
-                menu.addItem(withTitle: "移出文件夹", action: #selector(contextMoveOut(_:)), keyEquivalent: "").target = self
+                menu.addItem(withTitle: L("移出文件夹"), action: #selector(contextMoveOut(_:)), keyEquivalent: "").target = self
             }
             menu.addItem(.separator())
-            menu.addItem(withTitle: "在访达中显示", action: #selector(contextReveal(_:)), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "显示包内容", action: #selector(contextShowContents(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("在访达中显示"), action: #selector(contextReveal(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("显示包内容"), action: #selector(contextShowContents(_:)), keyEquivalent: "").target = self
             if let app = model.apps[tile.ref.id], canTrash(app.url) {
-                menu.addItem(withTitle: "移到废纸篓…", action: #selector(contextTrash(_:)), keyEquivalent: "").target = self
+                menu.addItem(withTitle: L("移到废纸篓…"), action: #selector(contextTrash(_:)), keyEquivalent: "").target = self
             }
         } else {
-            menu.addItem(withTitle: "打开文件夹", action: #selector(contextOpen(_:)), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "重命名文件夹", action: #selector(contextRename(_:)), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "解散文件夹", action: #selector(contextUngroup(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("打开文件夹"), action: #selector(contextOpen(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("重命名文件夹"), action: #selector(contextRename(_:)), keyEquivalent: "").target = self
+            menu.addItem(withTitle: L("解散文件夹"), action: #selector(contextUngroup(_:)), keyEquivalent: "").target = self
         }
         NSMenu.popUpContextMenu(menu, with: event, for: grid)
     }
@@ -1338,8 +1381,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
     @objc private func contextRename(_ sender: Any?) {
         guard let ref = contextRef else { return }
-        let oldName = ref.kind == "folder" ? model.state.folders[ref.id]?.name ?? "文件夹" : model.title(for: ref.id)
-        let panel = RenamePanel(title: ref.kind == "folder" ? "重命名文件夹" : "重命名应用",
+        let oldName = ref.kind == "folder" ? model.folderTitle(for: ref.id) : model.title(for: ref.id)
+        let panel = RenamePanel(title: ref.kind == "folder" ? L("重命名文件夹") : L("重命名应用"),
                                 currentName: oldName, parentLevel: window.level)
         window.makeKeyAndOrderFront(nil)
         window.addChildWindow(panel, ordered: .above)
@@ -1382,10 +1425,10 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     @objc private func contextTrash(_ sender: Any?) {
         guard let ref = contextRef, let app = model.apps[ref.id], canTrash(app.url) else { return }
         let alert = NSAlert()
-        alert.messageText = "将 \(model.title(for: ref.id)) 移到废纸篓？"
-        alert.informativeText = "这会移动应用文件，可从废纸篓恢复。"
-        alert.addButton(withTitle: "移到废纸篓")
-        alert.addButton(withTitle: "取消")
+        alert.messageText = Localization.format("将 %@ 移到废纸篓？", model.title(for: ref.id))
+        alert.informativeText = L("这会移动应用文件，可从废纸篓恢复。")
+        alert.addButton(withTitle: L("移到废纸篓"))
+        alert.addButton(withTitle: L("取消"))
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         NSWorkspace.shared.recycle([app.url]) { [weak self] _, error in
             DispatchQueue.main.async {
@@ -1399,6 +1442,20 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
 @main struct Main {
     static func main() {
+        if CommandLine.arguments.contains("--self-test-language") {
+            guard Localization.resolvedLanguage(selection: "system", preferredLanguages: ["zh-CN"]) == "zh-Hans",
+                  Localization.resolvedLanguage(selection: "system", preferredLanguages: ["zh-Hant-TW"]) == "zh-Hant",
+                  Localization.resolvedLanguage(selection: "system", preferredLanguages: ["zh-HK"]) == "zh-Hant",
+                  Localization.resolvedLanguage(selection: "system", preferredLanguages: ["en-US"]) == "en",
+                  Localization.resolvedLanguage(selection: "en", preferredLanguages: ["zh-CN"]) == "en",
+                  Localization.text("设置", in: "en") == "Settings",
+                  Localization.text("设置", in: "zh-Hant") == "設定",
+                  Localization.text("设置", in: "zh-Hans") == "设置" else {
+                fatalError("Language selection or translation lookup failed")
+            }
+            print("Language self-test passed")
+            return
+        }
         if CommandLine.arguments.contains("--self-test-indicator") {
             let indicator = PageIndicatorView(frame: NSRect(x: 0, y: 0, width: 1920, height: 900))
             indicator.pageCount = 3
@@ -1475,6 +1532,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             guard store.data.preferences.gridLayout == "7×7",
                   store.data.preferences.hotCorner == "topLeft",
                   store.data.preferences.theme == "system",
+                  store.data.preferences.language == "system",
                   store.data.preferences.showMenuBarIcon,
                   FileManager.default.fileExists(atPath: storeURL.path),
                   (try? FileManager.default.attributesOfItem(atPath: storeURL.path)[.posixPermissions] as? Int) == 0o600 else {
@@ -1489,6 +1547,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                 $0.lockLayout = true
                 $0.showQuickRefreshButton = true
                 $0.theme = "dark"
+                $0.language = "en"
             }
             let model = LauncherModel(store: store)
             let utilityIDs = Set(model.apps.values.filter {
@@ -1534,7 +1593,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                   !reloadedStore.data.preferences.showMenuBarIcon,
                   reloadedStore.data.preferences.lockLayout,
                   reloadedStore.data.preferences.showQuickRefreshButton,
-                  reloadedStore.data.preferences.theme == "dark" else {
+                  reloadedStore.data.preferences.theme == "dark",
+                  reloadedStore.data.preferences.language == "en" else {
                 fatalError("Data.store preferences did not persist")
             }
             let reloaded = LauncherModel(store: reloadedStore)
@@ -1642,7 +1702,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         let menuBar = NSMenu()
         let appMenuItem = NSMenuItem()
         let appMenu = NSMenu()
-        appMenu.addItem(withTitle: "退出启动台", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: L("退出启动台"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         appMenuItem.submenu = appMenu
         menuBar.addItem(appMenuItem)
         application.mainMenu = menuBar

@@ -8,6 +8,13 @@ struct Shortcut {
 
     static let fallback = Shortcut(keyCode: 37, modifiers: UInt32(controlKey | optionKey), label: "⌃⌥L")
 
+    var localizedLabel: String {
+        for suffix in ["空格", "空白鍵", "Space"] where label.hasSuffix(suffix) {
+            return String(label.dropLast(suffix.count)) + L("空格")
+        }
+        return label
+    }
+
     static func from(_ event: NSEvent) -> Shortcut? {
         let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         var carbon: UInt32 = 0
@@ -18,7 +25,7 @@ struct Shortcut {
         if flags.contains(.command) { carbon |= UInt32(cmdKey); prefix += "⌘" }
         guard carbon != 0 else { return nil }
         let character = event.charactersIgnoringModifiers?.uppercased() ?? ""
-        let key = character == " " ? "空格" : character
+        let key = character == " " ? "Space" : character
         guard !key.isEmpty else { return nil }
         return Shortcut(keyCode: UInt32(event.keyCode), modifiers: carbon, label: prefix + key)
     }
@@ -60,7 +67,7 @@ final class ShortcutRecorder: NSView {
     override func draw(_ dirtyRect: NSRect) {
         NSColor.windowBackgroundColor.setFill()
         NSBezierPath(roundedRect: bounds, xRadius: 6, yRadius: 6).fill()
-        let text = shortcut?.label ?? "点击这里，然后按快捷键"
+        let text = shortcut?.localizedLabel ?? L("点击这里，然后按快捷键")
         (text as NSString).draw(in: bounds.insetBy(dx: 12, dy: 8), withAttributes: [
             .font: NSFont.systemFont(ofSize: 15), .foregroundColor: NSColor.labelColor
         ])
