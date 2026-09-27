@@ -122,3 +122,33 @@ final class LauncherStore {
         }
     }
 }
+
+struct LauncherCleanup {
+    static let bundleIdentifier = "local.codex.classiclaunchpad"
+
+    let libraryURL: URL
+    let bundleIdentifier: String
+    let defaults: UserDefaults
+
+    init(libraryURL: URL = FileManager.default.urls(for: .libraryDirectory, in: .userDomainMask)[0],
+         bundleIdentifier: String = LauncherCleanup.bundleIdentifier,
+         defaults: UserDefaults = .standard) {
+        self.libraryURL = libraryURL
+        self.bundleIdentifier = bundleIdentifier
+        self.defaults = defaults
+    }
+
+    var dataLocations: [URL] {
+        [libraryURL.appendingPathComponent("Application Support/ClassicLaunchpad", isDirectory: true),
+         libraryURL.appendingPathComponent("Caches/\(bundleIdentifier)", isDirectory: true),
+         libraryURL.appendingPathComponent("Saved Application State/\(bundleIdentifier).savedState", isDirectory: true),
+         libraryURL.appendingPathComponent("Preferences/\(bundleIdentifier).plist")]
+    }
+
+    func removeLocalData() throws {
+        defaults.removePersistentDomain(forName: bundleIdentifier)
+        for url in dataLocations where FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
+        }
+    }
+}

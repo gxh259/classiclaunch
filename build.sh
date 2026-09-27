@@ -50,6 +50,8 @@ codesign --force --sign - "$APP_DIR"
 
 cp -R "$APP_DIR" "$PACKAGE_DIR/启动台.app"
 ln -s /Applications "$PACKAGE_DIR/应用程序"
+cp 清理旧版残留.command "$PACKAGE_DIR/清理旧版残留.command"
+chmod +x "$PACKAGE_DIR/清理旧版残留.command"
 printf '%s\n' '将“启动台.app”拖入“应用程序”，然后从“应用程序”打开。' > "$PACKAGE_DIR/安装说明.txt"
 ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "$ZIP_PATH"
 

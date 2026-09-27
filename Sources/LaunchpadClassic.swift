@@ -1054,6 +1054,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         section("系统")
         row("登录项", control: button("打开系统登录项设置…", action: #selector(openLoginItemsSettings(_:))))
         row("应用数据", control: button("打开数据文件夹", action: #selector(openDataFolder(_:))))
+        row("卸载", control: button("完全卸载启动台…", action: #selector(uninstallLauncher(_:))))
         y += 8
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? ""
         label("启动台 \(version)", x: 26, width: 300, size: 12)
@@ -1130,6 +1131,52 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         closeSettingsPanel()
         window.orderOut(nil)
         NSWorkspace.shared.activateFileViewerSelecting([store.fileURL])
+    }
+
+    @objc private func uninstallLauncher(_ sender: Any?) {
+        let appURL = Bundle.main.bundleURL.standardizedFileURL
+        guard appURL.pathExtension.lowercased() == "app",
+              appURL.deletingLastPathComponent().path == "/Applications" else {
+            showSettingAlert("无法卸载", "请先将“启动台.app”安装到“应用程序”，再从设置中运行完整卸载。")
+            return
+        }
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = "完全卸载启动台？"
+        alert.informativeText = "将“启动台.app”移到废纸篓，并删除图标排序、文件夹、应用别名、隐藏状态和其他设置；同时移除开机自启动。此操作无法撤销。"
+        alert.addButton(withTitle: "卸载并删除数据")
+        alert.addButton(withTitle: "取消")
+        alert.window.level = NSWindow.Level(rawValue: window.level.rawValue + 2)
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        do {
+            try LoginStartup.shared.disable()
+        } catch {
+            showSettingAlert("无法移除登录项", error.localizedDescription)
+            return
+        }
+
+        NSWorkspace.shared.recycle([appURL]) { [weak self] moved, error in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                if let error {
+                    self.showSettingAlert("无法移到废纸篓", error.localizedDescription)
+                    return
+                }
+                guard moved[appURL] != nil else {
+                    self.showSettingAlert("无法移到废纸篓", "访达没有确认移动“启动台.app”，应用数据尚未删除。")
+                    return
+                }
+                do {
+                    try LauncherCleanup().removeLocalData()
+                    self.closeSettingsPanel()
+                    self.window.orderOut(nil)
+                    NSApp.terminate(nil)
+                } catch {
+                    self.showSettingAlert("应用已移到废纸篓，但未清理完数据", error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func showSettingAlert(_ title: String, _ details: String) {
@@ -1533,6 +1580,32 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             }
             try! login.disable()
             guard !login.isEnabled else { fatalError("Login startup removal failed") }
+            let cleanupSuite = "local.codex.classiclaunchpad.cleanup-test.\(UUID().uuidString)"
+            let cleanupDefaults = UserDefaults(suiteName: cleanupSuite)!
+            defer { cleanupDefaults.removePersistentDomain(forName: cleanupSuite) }
+            cleanupDefaults.set(true, forKey: "leftover")
+            let libraryURL = directory.appendingPathComponent("Library", isDirectory: true)
+            let cleanup = LauncherCleanup(libraryURL: libraryURL,
+                                          bundleIdentifier: cleanupSuite, defaults: cleanupDefaults)
+            for url in cleanup.dataLocations {
+                try! FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                         withIntermediateDirectories: true)
+                if url.pathExtension == "plist" {
+                    try! Data("old settings".utf8).write(to: url)
+                } else {
+                    try! FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+                }
+            }
+            let unrelated = libraryURL.appendingPathComponent("Application Support/OtherApp/Data.store")
+            try! FileManager.default.createDirectory(at: unrelated.deletingLastPathComponent(),
+                                                     withIntermediateDirectories: true)
+            try! Data("keep".utf8).write(to: unrelated)
+            try! cleanup.removeLocalData()
+            guard cleanup.dataLocations.allSatisfy({ !FileManager.default.fileExists(atPath: $0.path) }),
+                  FileManager.default.fileExists(atPath: unrelated.path),
+                  cleanupDefaults.object(forKey: "leftover") == nil else {
+                fatalError("Complete uninstall removed the wrong files or left application data")
+            }
             print("Model self-test passed")
             return
         }
