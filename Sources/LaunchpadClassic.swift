@@ -115,6 +115,28 @@ final class SettingsCanvas: NSView {
     override var isFlipped: Bool { true }
 }
 
+// Keep the full-screen background inside our own window. Blurring windows
+// behind the launcher causes remote-control overlays to invalidate the whole
+// launcher surface every time their edge controls redraw.
+final class WallpaperView: NSView {
+    var image: NSImage? { didSet { needsDisplay = true } }
+
+    override func draw(_ dirtyRect: NSRect) {
+        NSColor(calibratedWhite: 0.23, alpha: 1).setFill()
+        bounds.fill()
+        guard let image, image.size.width > 0, image.size.height > 0 else { return }
+        let scale = max(bounds.width / image.size.width, bounds.height / image.size.height)
+        let size = NSSize(width: image.size.width * scale, height: image.size.height * scale)
+        let destination = NSRect(x: bounds.midX - size.width / 2,
+                                 y: bounds.midY - size.height / 2,
+                                 width: size.width, height: size.height)
+        NSGraphicsContext.current?.saveGraphicsState()
+        bounds.clip()
+        image.draw(in: destination, from: .zero, operation: .sourceOver, fraction: 1)
+        NSGraphicsContext.current?.restoreGraphicsState()
+    }
+}
+
 final class AppCatalog {
     private(set) static var lastDockDatabaseOpened = false
     private(set) static var lastDockAppCount = 0
@@ -584,6 +606,8 @@ final class GridView: NSView {
 final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDelegate, NSWindowDelegate {
     private let store = LauncherStore.shared
     private var window: NSWindow!
+    private var wallpaperView: WallpaperView!
+    private var wallpaperURL: URL?
     private var grid: GridView!
     private var pageIndicator: PageIndicatorView!
     private var search: NSSearchField!
@@ -611,8 +635,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         window = LauncherWindow(contentRect: frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.level = .floating
         window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        window.backgroundColor = .clear
-        window.isOpaque = false
+        window.backgroundColor = NSColor(calibratedWhite: 0.23, alpha: 1)
+        window.isOpaque = true
         window.hasShadow = false
         window.title = "启动台"
         grid = GridView(frame: NSRect(origin: .zero, size: frame.size))
@@ -641,12 +665,14 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             guard let self, self.settingsPanel?.isVisible != true else { return }
             self.showContextMenu(tile, event: event)
         }
+        wallpaperView = WallpaperView(frame: NSRect(origin: .zero, size: frame.size))
+        window.contentView = wallpaperView
         let backdrop = NSVisualEffectView(frame: NSRect(origin: .zero, size: frame.size))
         backdrop.material = .fullScreenUI
-        backdrop.blendingMode = .behindWindow
+        backdrop.blendingMode = .withinWindow
         backdrop.state = .active
         backdrop.autoresizingMask = [.width, .height]
-        window.contentView = backdrop
+        wallpaperView.addSubview(backdrop)
         backdrop.addSubview(grid)
         pageIndicator = PageIndicatorView(frame: NSRect(origin: .zero, size: frame.size))
         pageIndicator.autoresizingMask = [.width, .height]
@@ -690,6 +716,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         refreshButton.action = #selector(rescan(_:))
         refreshButton.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
         backdrop.addSubview(refreshButton)
+        updateScreenGeometry(for: screen)
         applyTheme()
         model = LauncherModel()
         refreshGrid()
@@ -769,6 +796,11 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         window?.orderOut(nil)
     }
 
+    func applicationDidChangeScreenParameters(_ notification: Notification) {
+        guard window != nil, let screen = preferredScreen() else { return }
+        updateScreenGeometry(for: screen)
+    }
+
     func windowWillClose(_ notification: Notification) {
         guard let panel = notification.object as? NSPanel, panel === settingsPanel else { return }
         window.removeChildWindow(panel)
@@ -816,12 +848,28 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         refreshButton.isHidden = activeFolderID != nil || !store.data.preferences.showQuickRefreshButton
     }
 
-    private func show() {
-        closeSettingsPanel()
-        if let screen = window.screen {
-            grid.dockBottomInset = max(0, screen.visibleFrame.minY - screen.frame.minY)
+    private func preferredScreen() -> NSScreen? {
+        let point = NSEvent.mouseLocation
+        return NSScreen.screens.first(where: { $0.frame.contains(point) })
+            ?? window.screen ?? NSScreen.main ?? NSScreen.screens.first
+    }
+
+    private func updateScreenGeometry(for screen: NSScreen) {
+        if window.frame != screen.frame {
+            window.setFrame(screen.frame, display: window.isVisible)
+        }
+        grid.dockBottomInset = max(0, screen.visibleFrame.minY - screen.frame.minY)
+        let imageURL = NSWorkspace.shared.desktopImageURL(for: screen)
+        if imageURL != wallpaperURL {
+            wallpaperURL = imageURL
+            wallpaperView.image = imageURL.flatMap { NSImage(contentsOf: $0) }
         }
         updatePageIndicator()
+    }
+
+    private func show() {
+        closeSettingsPanel()
+        if let screen = preferredScreen() { updateScreenGeometry(for: screen) }
         search.stringValue = ""
         activeFolderID = nil
         refreshGrid()
