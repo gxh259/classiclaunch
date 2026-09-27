@@ -11,6 +11,7 @@ PACKAGE_DIR="$DIST_DIR/启动台安装包"
 ZIP_PATH="$DIST_DIR/启动台-通用版.zip"
 
 mkdir -p "$BUILD_DIR" "$DIST_DIR"
+./scripts/generate-icon.sh "$BUILD_DIR/AppIcon.icns"
 
 build_arch() {
   local arch="$1"
@@ -45,7 +46,7 @@ lipo -create \
 lipo -verify_arch arm64 "$APP_DIR/Contents/MacOS/ClassicLaunchpad"
 lipo -verify_arch x86_64 "$APP_DIR/Contents/MacOS/ClassicLaunchpad"
 cp Resources/Info.plist "$APP_DIR/Contents/Info.plist"
-cp Resources/AppIcon.icns Resources/AppIcon.png "$APP_DIR/Contents/Resources/"
+cp "$BUILD_DIR/AppIcon.icns" Resources/AppIcon.png "$APP_DIR/Contents/Resources/"
 codesign --force --sign - "$APP_DIR"
 
 cp -R "$APP_DIR" "$PACKAGE_DIR/启动台.app"
