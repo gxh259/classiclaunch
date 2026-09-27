@@ -1,6 +1,6 @@
 # 启动台（ClassicLaunchpad）
 
-用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.27**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
+用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.28**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
 
 ## 功能
 
@@ -23,11 +23,34 @@ chmod +x build.sh
 ./build.sh
 ```
 
-脚本分别编译 arm64 和 x86_64，然后合并成一个通用二进制，在 `dist/` 中生成 `启动台.app` 和 `启动台-通用版.zip`。它使用本机 macOS SDK 编译，并对合并后的应用执行临时签名。首次打开时若被系统阻止，可在访达中右键应用并选择“打开”。这个构建没有经过 Apple 公证。
+脚本分别编译 arm64 和 x86_64，然后合并成一个通用二进制，在 `dist/` 中生成 `启动台.app` 和 `启动台-通用版.zip`。它使用本机 macOS SDK 编译，并对合并后的应用执行临时签名。这个构建没有经过 Apple 公证。
 
 ## 安装与使用
 
-解压 `dist/启动台-通用版.zip`，将“启动台.app”拖到同一文件夹内的“应用程序”快捷方式，再从 `/Applications` 打开。若已有旧版本，请先退出旧应用并在复制时选择替换。开机自启动需要应用位于 `/Applications`。
+### 手动安装
+
+从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 ZIP。解压后，将“启动台.app”拖到同一文件夹内的“应用程序”快捷方式，再从 `/Applications` 打开。若已有旧版本，请先退出旧应用并在复制时选择替换。开机自启动需要应用位于 `/Applications`。
+
+### Homebrew 安装
+
+仓库的 [`Casks/classiclaunch.rb`](Casks/classiclaunch.rb) 提供 Homebrew Cask。由于仓库名是 `classiclaunch`，需要在 `brew tap` 中指定仓库地址：
+
+```bash
+brew tap gxh259/classiclaunch https://github.com/gxh259/classiclaunch.git
+brew install --cask gxh259/classiclaunch/classiclaunch
+```
+
+后续可运行 `brew upgrade --cask gxh259/classiclaunch/classiclaunch` 更新，或运行 `brew uninstall --cask gxh259/classiclaunch/classiclaunch` 卸载应用。卸载时 Homebrew 默认保留用户设置；如需连本地设置一并删除，可在卸载时添加 `--zap`。
+
+### 首次打开与签名
+
+本应用使用临时签名，尚未经过 Apple 公证。如果 macOS 阻止打开，请先在访达中右键“启动台.app”并选择“打开”。确认下载来源可信后，如仍被隔离标记阻止，可在终端运行：
+
+```bash
+sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
+```
+
+这条命令仅清除隔离标记，**不会验证签名或完成 Apple 公证**。如需检查应用包的签名完整性，可另行运行 `codesign --verify --deep --strict /Applications/启动台.app`；临时签名不代表 Apple 开发者身份认证。
 
 默认全局快捷键为 **Control–Option–L**，可在设置中更改。搜索框旁的齿轮打开设置；其中的“重新扫描应用”会清空当前加载的应用列表，并重新读取应用目录。也可按 **Command–R** 重新扫描。
 

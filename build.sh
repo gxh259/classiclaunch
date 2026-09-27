@@ -53,7 +53,23 @@ cp -R "$APP_DIR" "$PACKAGE_DIR/启动台.app"
 ln -s /Applications "$PACKAGE_DIR/应用程序"
 cp 清理旧版残留.command "$PACKAGE_DIR/清理旧版残留.command"
 chmod +x "$PACKAGE_DIR/清理旧版残留.command"
-printf '%s\n' '将“启动台.app”拖入“应用程序”，然后从“应用程序”打开。' > "$PACKAGE_DIR/安装说明.txt"
+cat > "$PACKAGE_DIR/安装说明.txt" <<'EOF'
+启动台安装说明
+
+手动安装：
+1. 将“启动台.app”拖入旁边的“应用程序”快捷方式。
+2. 从“应用程序”打开启动台。升级时请先退出旧版，并在复制时选择替换。
+
+Homebrew 安装：
+brew tap gxh259/classiclaunch https://github.com/gxh259/classiclaunch.git
+brew install --cask gxh259/classiclaunch/classiclaunch
+
+本应用使用临时签名，尚未经过 Apple 公证。如果 macOS 阻止打开，请先在访达中右键“启动台.app”并选择“打开”。确认安装包来源可信后，如仍被隔离标记阻止，可在终端运行：
+sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
+
+这条 xattr 命令仅清除隔离标记，不会执行签名验证，也不能代替 Apple 公证。如需检查应用签名完整性，可运行：
+codesign --verify --deep --strict /Applications/启动台.app
+EOF
 ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "$ZIP_PATH"
 
 printf '已生成：%s（arm64 + x86_64）\n' "$ZIP_PATH"
