@@ -1,11 +1,11 @@
 # 启动台（ClassicLaunchpad）
 
-用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.30**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
+用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.31**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
 
 ## 功能
 
 - 全屏网格与应用搜索；支持拖拽排序、创建和重命名文件夹、隐藏应用及自定义应用名称。
-- 可选 5×7、6×8、7×7 网格布局；鼠标滚轮、方向键或固定在页面底部的圆点均可切换页面。
+- 可选 5×7、6×8、7×7 网格布局；鼠标左键左右拖动、触控板三指横向轻扫、滚轮、方向键或固定在页面底部的圆点均可切换页面。
 - 从 `/Applications` 扫描应用，优先使用与系统语言匹配的应用名称。访达“实用工具”中的应用会归入「其他」文件夹。可手动重新扫描，并可选用 Dock 启动台数据库补充系统应用。
 - 通过 Dock、菜单栏、可录制的全局快捷键或触发角打开。
 - 设置窗口提供明亮、黑暗、跟随系统三种主题，以及开机自启动、显示或隐藏菜单栏图标等选项。界面语言可选跟随系统、简体中文、繁體中文或 English。
@@ -58,6 +58,12 @@ sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
 
 设置中的“语言”默认跟随 macOS 首选语言；可手动选简体中文、繁體中文或 English，切换后界面立即更新并记住选择。应用网格中的第三方应用名称仍按 macOS／访达语言显示，用户自定义名称也会保留。
 
+### 拖动与手势翻页
+
+按住鼠标左键，在空白处左右拖动即可翻页；向左拖动前往下一页，向右拖动返回上一页。图标上快速横向拖动也可翻页；需要排序时，按住图标约 0.35 秒再拖动，或直接纵向拖动图标。每次拖动只切换一页，松开后不会误打开应用或关闭启动台。单击空白处仍会关闭启动台；文件夹内也支持翻页。
+
+鼠标指针位于应用网格上时，可使用触控板三指横向轻扫。程序处理三指触摸事件和 AppKit 的原生 swipe 事件。macOS 的系统手势可能优先接收三指操作；若三指轻扫切换了桌面，请在“系统设置 > 触控板”的手势选项中调整冲突项。手势分发机制参见 [Apple 的触控板事件文档](https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/EventOverview/HandlingTouchEvents/HandlingTouchEvents.html)。
+
 布局、文件夹、隐藏状态、应用别名和偏好存放在：
 
 ```text
@@ -78,4 +84,4 @@ sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
 
 应用扫描以 `/Applications` 为主，并包含系统“实用工具”目录。应用包的本地化名称会优先于 bundle 内的英文名称；用户设置的别名优先级最高。Dock 启动台数据库为可选的只读补充来源，数据库不存在或结构不兼容时会跳过。程序不修改系统文件。
 
-源代码位于 `Sources/`，应用的 `Info.plist`、本地化资源和原始 PNG 图标位于 `Resources/`。构建脚本会由 PNG 生成应用包的 `.icns`；图标包含清晰的大尺寸图像，让访达按需要缩放到列表尺寸。语言、图标排序与分页相关的命令行自测入口包含在主程序中，可用 `dist/启动台.app/Contents/MacOS/ClassicLaunchpad --self-test-language`、`--self-test-indicator` 和 `--self-test-scroll` 运行。
+源代码位于 `Sources/`，应用的 `Info.plist`、本地化资源和原始 PNG 图标位于 `Resources/`。构建脚本会由 PNG 生成应用包的 `.icns`；图标包含清晰的大尺寸图像，让访达按需要缩放到列表尺寸。语言、图标排序与分页相关的命令行自测入口包含在主程序中，可用 `dist/启动台.app/Contents/MacOS/ClassicLaunchpad --self-test-language`、`--self-test-indicator`、`--self-test-scroll` 和 `--self-test-gestures` 运行。

@@ -343,6 +343,7 @@ final class PageIndicatorView: NSView {
     var dotY: CGFloat = 92 { didSet { needsDisplay = true } }
     var onSelectPage: ((Int) -> Void)?
     var onScroll: ((NSEvent) -> Void)?
+    var onSwipe: ((NSEvent) -> Void)?
 
     private var capsule: NSRect {
         let width = CGFloat(pageCount) * 18
@@ -386,10 +387,11 @@ final class PageIndicatorView: NSView {
     }
 
     override func scrollWheel(with event: NSEvent) { onScroll?(event) }
+    override func swipe(with event: NSEvent) { onSwipe?(event) }
 }
 
 final class GridView: NSView {
-    var tiles: [DisplayTile] = [] { didSet { page = 0; needsDisplay = true } }
+    var tiles: [DisplayTile] = [] { didSet { resetPointerGestures(); page = 0; needsDisplay = true } }
     var statusMessage: String? { didSet { needsDisplay = true } }
     var page = 0 { didSet { needsDisplay = true; onPageChanged?() } }
     var layout: GridLayout = .fiveBySeven { didSet { page = 0; needsDisplay = true } }
@@ -405,14 +407,22 @@ final class GridView: NSView {
     var dockBottomInset: CGFloat = 0 { didSet { needsDisplay = true } }
     override var acceptsFirstResponder: Bool { true }
 
-    private var dragStart: NSPoint?
-    private var dragSource: Int?
-    private var isDragging = false
+    private var mouseDrag = MousePageDragState()
+    private var threeFingerSwipe = ThreeFingerSwipeState()
+    private var lastTrackpadPageAt: TimeInterval = -.infinity
     private var scrollState = PageScrollState()
     private var isDark: Bool {
         effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
     }
     private var labelColor: NSColor { isDark ? .white : .black }
+
+    override init(frame frameRect: NSRect) {
+        super.init(frame: frameRect)
+        allowedTouchTypes = [.indirect]
+        wantsRestingTouches = true
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override func viewDidChangeEffectiveAppearance() {
         super.viewDidChangeEffectiveAppearance()
@@ -464,6 +474,18 @@ final class GridView: NSView {
         guard col >= 0, col < columns, row >= 0, row < rows else { return nil }
         let index = page * pageSize + row * columns + col
         return index < tiles.count ? index : nil
+    }
+
+    private func interactiveTileIndex(at point: NSPoint) -> Int? {
+        guard let index = tileIndex(at: point) else { return nil }
+        let (rect, cellW, cellH) = geometry()
+        let local = index - page * pageSize
+        let x = rect.minX + CGFloat(local % columns) * cellW
+        let y = rect.maxY - CGFloat(local / columns + 1) * cellH
+        let size = max(32, min(112, cellW - 38, cellH - 48))
+        let icon = NSRect(x: x + (cellW - size) / 2, y: y + cellH - size - 8, width: size, height: size)
+        let label = NSRect(x: x + 3, y: y + 7, width: cellW - 6, height: 31)
+        return icon.insetBy(dx: -5, dy: -5).contains(point) || label.contains(point) ? index : nil
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -536,27 +558,32 @@ final class GridView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
-        dragStart = p
-        dragSource = tileIndex(at: p)
-        isDragging = false
-        let (gridRect, _, _) = geometry()
-        if folderMode {
-            if !folderPanel().contains(p) { onCloseFolder?() }
-        } else if !gridRect.contains(p) || tileIndex(at: p) == nil { onDismiss?() }
+        mouseDrag.begin(at: p, source: interactiveTileIndex(at: p), time: event.timestamp)
     }
 
     override func mouseDragged(with event: NSEvent) {
-        guard let start = dragStart, dragSource != nil else { return }
         let point = convert(event.locationInWindow, from: nil)
-        if hypot(point.x - start.x, point.y - start.y) > 8 { isDragging = true }
+        if let direction = mouseDrag.direction(at: point, time: event.timestamp, layoutLocked: layoutLocked) {
+            goToPage(page + direction)
+        }
     }
 
     override func mouseUp(with event: NSEvent) {
-        guard let sourceIndex = dragSource, sourceIndex < tiles.count else { return }
-        defer { dragStart = nil; dragSource = nil; isDragging = false }
-        if !isDragging { onSelect?(tiles[sourceIndex]); return }
-        if layoutLocked { return }
+        guard mouseDrag.isActive else { return }
         let point = convert(event.locationInWindow, from: nil)
+        defer { mouseDrag = MousePageDragState() }
+        if let direction = mouseDrag.direction(at: point, time: event.timestamp, layoutLocked: layoutLocked) {
+            goToPage(page + direction)
+        }
+        if !mouseDrag.moved {
+            if let source = mouseDrag.source, source < tiles.count { onSelect?(tiles[source]) }
+            else if folderMode {
+                if !folderPanel().contains(point) { onCloseFolder?() }
+            } else { onDismiss?() }
+            return
+        }
+        guard mouseDrag.intent == .rearrange, !layoutLocked,
+              let sourceIndex = mouseDrag.source, sourceIndex < tiles.count else { return }
         let destinationIndex = tileIndex(at: point)
         if destinationIndex == sourceIndex { return }
         let target = destinationIndex.flatMap { $0 == sourceIndex ? nil : tiles[$0] }
@@ -572,12 +599,55 @@ final class GridView: NSView {
     }
 
     override func scrollWheel(with event: NSEvent) {
+        guard !mouseDrag.isActive, !threeFingerSwipe.isTracking,
+              ProcessInfo.processInfo.systemUptime - lastTrackpadPageAt > 0.4 else { return }
         let delta = abs(event.scrollingDeltaY) >= abs(event.scrollingDeltaX)
             ? event.scrollingDeltaY : event.scrollingDeltaX
         guard let direction = scrollState.direction(delta: delta,
             precise: event.hasPreciseScrollingDeltas, phase: event.phase,
             momentum: event.momentumPhase, at: ProcessInfo.processInfo.systemUptime) else { return }
         goToPage(page + direction)
+    }
+
+    override func touchesBegan(with event: NSEvent) { handleTouches(event) }
+    override func touchesMoved(with event: NSEvent) { handleTouches(event) }
+    override func touchesEnded(with event: NSEvent) {
+        let consumed = threeFingerSwipe.consumed
+        handleTouches(event)
+        if consumed && !threeFingerSwipe.isTracking { lastTrackpadPageAt = ProcessInfo.processInfo.systemUptime }
+    }
+    override func touchesCancelled(with event: NSEvent) {
+        if threeFingerSwipe.consumed { lastTrackpadPageAt = ProcessInfo.processInfo.systemUptime }
+        threeFingerSwipe.reset()
+    }
+
+    private func handleTouches(_ event: NSEvent) {
+        guard !mouseDrag.isActive else { threeFingerSwipe.reset(); return }
+        let points = Dictionary(uniqueKeysWithValues: event.touches(matching: .touching, in: self)
+            .filter { $0.type == .indirect }.compactMap { touch -> (AnyHashable, NSPoint)? in
+                guard let identity = touch.identity as? AnyHashable else { return nil }
+                return (identity, touch.normalizedPosition)
+            })
+        if let direction = threeFingerSwipe.direction(touches: points) {
+            lastTrackpadPageAt = ProcessInfo.processInfo.systemUptime
+            goToPage(page + direction)
+        }
+    }
+
+    override func swipe(with event: NSEvent) {
+        guard !mouseDrag.isActive,
+              let direction = ThreeFingerSwipeState.nativeDirection(deltaX: event.deltaX, deltaY: event.deltaY),
+              !threeFingerSwipe.consumed,
+              ProcessInfo.processInfo.systemUptime - lastTrackpadPageAt > 0.4 else { return }
+        if threeFingerSwipe.isTracking { threeFingerSwipe.consume() }
+        lastTrackpadPageAt = ProcessInfo.processInfo.systemUptime
+        goToPage(page + direction)
+    }
+
+    func resetPointerGestures() {
+        mouseDrag = MousePageDragState()
+        threeFingerSwipe.reset()
+        lastTrackpadPageAt = -.infinity
     }
 
     func goToPage(_ next: Int) {
@@ -678,6 +748,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         pageIndicator.autoresizingMask = [.width, .height]
         pageIndicator.onSelectPage = { [weak self] index in self?.grid.goToPage(index) }
         pageIndicator.onScroll = { [weak self] event in self?.grid.scrollWheel(with: event) }
+        pageIndicator.onSwipe = { [weak self] event in self?.grid.swipe(with: event) }
         backdrop.addSubview(pageIndicator)
         grid.onPageChanged = { [weak self] in self?.updatePageIndicator() }
         search = NSSearchField(frame: NSRect(x: (frame.width - 360) / 2,
@@ -903,6 +974,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
     private func show() {
         closeSettingsPanel()
+        grid.resetPointerGestures()
         if let screen = preferredScreen() { updateScreenGeometry(for: screen) }
         search.stringValue = ""
         activeFolderID = nil
@@ -1442,6 +1514,81 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
 @main struct Main {
     static func main() {
+        if CommandLine.arguments.contains("--self-test-gestures") {
+            var mouse = MousePageDragState()
+            mouse.begin(at: .zero, source: nil, time: 0)
+            guard mouse.direction(at: NSPoint(x: -90, y: 2), time: 0.1, layoutLocked: false) == 1,
+                  mouse.direction(at: NSPoint(x: -200, y: 2), time: 0.2, layoutLocked: false) == nil else {
+                fatalError("Mouse drag must turn one page per press")
+            }
+            mouse.begin(at: .zero, source: 0, time: 0)
+            guard mouse.direction(at: NSPoint(x: 80, y: 0), time: 0.5, layoutLocked: false) == nil,
+                  mouse.intent == .rearrange else { fatalError("Held icon must remain rearrangeable") }
+            mouse.begin(at: .zero, source: 0, time: 0)
+            guard mouse.direction(at: NSPoint(x: -80, y: 0), time: 0.1, layoutLocked: true) == 1 else {
+                fatalError("Layout lock must allow page dragging")
+            }
+            var touch = ThreeFingerSwipeState()
+            let origin: [AnyHashable: NSPoint] = [1: NSPoint(x: 0.4, y: 0.5),
+                                                 2: NSPoint(x: 0.5, y: 0.5), 3: NSPoint(x: 0.6, y: 0.5)]
+            let left = origin.mapValues { NSPoint(x: $0.x - 0.1, y: $0.y) }
+            guard touch.direction(touches: origin) == nil, touch.direction(touches: left) == 1,
+                  touch.direction(touches: left) == nil else { fatalError("Three-finger swipe repeated") }
+            _ = touch.direction(touches: [:])
+            let two = origin.filter { $0.key != AnyHashable(3) }
+            guard touch.direction(touches: two) == nil else { fatalError("Two fingers recognized as three") }
+            _ = touch.direction(touches: [:])
+            _ = touch.direction(touches: origin)
+            guard touch.direction(touches: origin.mapValues { NSPoint(x: $0.x, y: $0.y + 0.2) }) == nil,
+                  ThreeFingerSwipeState.nativeDirection(deltaX: 1, deltaY: 0) == 1,
+                  ThreeFingerSwipeState.nativeDirection(deltaX: -1, deltaY: 0) == -1 else {
+                fatalError("Trackpad swipe direction or axis is incorrect")
+            }
+            touch.reset()
+            _ = touch.direction(touches: origin)
+            _ = touch.direction(touches: two)
+            guard touch.direction(touches: left) == nil else { fatalError("Lifted finger caused a page jump") }
+            touch.reset()
+            _ = touch.direction(touches: origin)
+            var replacement = left
+            replacement[4] = replacement.removeValue(forKey: 3)
+            guard touch.direction(touches: replacement) == nil else { fatalError("Changed touch identities caused a page jump") }
+            let grid = GridView(frame: NSRect(x: 0, y: 0, width: 1920, height: 1080))
+            grid.tiles = (0..<90).map { DisplayTile(ref: TileRef(kind: "app", id: "test.\($0)"),
+                                                   title: "Test", icons: []) }
+            var dismissed = 0, selected = 0, dropped = 0
+            grid.onDismiss = { dismissed += 1 }
+            grid.onSelect = { _ in selected += 1 }
+            grid.onDrop = { _, _, _ in dropped += 1 }
+            func event(_ type: NSEvent.EventType, _ point: NSPoint, _ time: TimeInterval) -> NSEvent {
+                NSEvent.mouseEvent(with: type, location: point, modifierFlags: [], timestamp: time,
+                                   windowNumber: 0, context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+            }
+            let blank = NSPoint(x: 1600, y: 70)
+            grid.mouseDown(with: event(.leftMouseDown, blank, 0))
+            guard dismissed == 0 else { fatalError("Mouse down dismissed before dragging") }
+            grid.mouseDragged(with: event(.leftMouseDragged, NSPoint(x: 1400, y: 70), 0.1))
+            grid.mouseUp(with: event(.leftMouseUp, NSPoint(x: 1400, y: 70), 0.2))
+            guard grid.page == 1, dismissed == 0, selected == 0, dropped == 0 else {
+                fatalError("Background drag triggered a click or drop")
+            }
+            grid.mouseDown(with: event(.leftMouseDown, blank, 1))
+            grid.mouseUp(with: event(.leftMouseUp, blank, 1.1))
+            guard dismissed == 1 else { fatalError("Background click must still dismiss") }
+            grid.goToPage(0)
+            let icon = NSPoint(x: 184, y: 891)
+            grid.mouseDown(with: event(.leftMouseDown, icon, 2))
+            grid.mouseDragged(with: event(.leftMouseDragged, NSPoint(x: 84, y: 891), 2.1))
+            grid.mouseUp(with: event(.leftMouseUp, NSPoint(x: 84, y: 891), 2.2))
+            guard grid.page == 1, selected == 0, dropped == 0 else { fatalError("Icon swipe must page") }
+            grid.goToPage(0)
+            grid.mouseDown(with: event(.leftMouseDown, icon, 3))
+            grid.mouseDragged(with: event(.leftMouseDragged, NSPoint(x: 440, y: 891), 3.5))
+            grid.mouseUp(with: event(.leftMouseUp, NSPoint(x: 440, y: 891), 3.6))
+            guard grid.page == 0, dropped == 1 else { fatalError("Icon hold-and-drag must rearrange") }
+            print("Page gesture self-test passed")
+            return
+        }
         if CommandLine.arguments.contains("--self-test-language") {
             guard Localization.resolvedLanguage(selection: "system", preferredLanguages: ["zh-CN"]) == "zh-Hans",
                   Localization.resolvedLanguage(selection: "system", preferredLanguages: ["zh-Hant-TW"]) == "zh-Hant",

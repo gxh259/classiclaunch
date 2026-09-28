@@ -30,6 +30,7 @@ build_arch() {
     Sources/LoginStartup.swift \
     Sources/LauncherModel.swift \
     Sources/Hotkey.swift \
+    Sources/PageGestures.swift \
     Sources/LaunchpadClassic.swift \
     -lsqlite3 \
     -o "$BUILD_DIR/ClassicLaunchpad-$arch"
