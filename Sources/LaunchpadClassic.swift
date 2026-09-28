@@ -115,13 +115,24 @@ final class SettingsCanvas: NSView {
     override var isFlipped: Bool { true }
 }
 
-// Keep the full-screen background inside our own window. Blurring windows
-// behind the launcher causes remote-control overlays to invalidate the whole
-// launcher surface every time their edge controls redraw.
+// Dark mode renders its wallpaper inside the launcher. Light mode leaves this
+// view clear so the separate visual-effect layer can show the desktop beneath.
 final class WallpaperView: NSView {
     var image: NSImage? { didSet { needsDisplay = true } }
+    var showsWallpaper = true { didSet { needsDisplay = true } }
+    var onAppearanceChanged: (() -> Void)?
+
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        onAppearanceChanged?()
+    }
 
     override func draw(_ dirtyRect: NSRect) {
+        if !showsWallpaper {
+            NSColor.clear.setFill()
+            bounds.fill(using: .copy)
+            return
+        }
         NSColor(calibratedWhite: 0.23, alpha: 1).setFill()
         bounds.fill()
         guard let image, image.size.width > 0, image.size.height > 0 else { return }
@@ -414,7 +425,14 @@ final class GridView: NSView {
     private var isDark: Bool {
         effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
     }
-    private var labelColor: NSColor { isDark ? .white : .black }
+    private var labelColor: NSColor { folderMode && !isDark ? .black : .white }
+    private var titleShadow: NSShadow {
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.85)
+        shadow.shadowBlurRadius = 3
+        shadow.shadowOffset = NSSize(width: 0, height: -1)
+        return shadow
+    }
 
     override init(frame frameRect: NSRect) {
         super.init(frame: frameRect)
@@ -502,7 +520,8 @@ final class GridView: NSView {
             (folderName as NSString).draw(in: NSRect(x: panel.minX, y: panel.maxY + 25,
                                                      width: panel.width, height: 40),
                 withAttributes: [.font: NSFont.systemFont(ofSize: 29, weight: .medium),
-                                 .foregroundColor: labelColor, .paragraphStyle: titleStyle])
+                                 .foregroundColor: NSColor.white, .shadow: titleShadow,
+                                 .paragraphStyle: titleStyle])
         }
         let start = page * pageSize
         let end = min(start + pageSize, tiles.count)
@@ -534,6 +553,7 @@ final class GridView: NSView {
                 (tile.title as NSString).draw(in: titleRect, withAttributes: [
                     .font: NSFont.systemFont(ofSize: 16, weight: .medium),
                     .foregroundColor: labelColor,
+                    .shadow: folderMode && !isDark ? NSShadow() : titleShadow,
                     .paragraphStyle: paragraph
                 ])
             }
@@ -542,7 +562,7 @@ final class GridView: NSView {
             let style = NSMutableParagraphStyle(); style.alignment = .center
             (L("没有找到应用") as NSString).draw(in: NSRect(x: 0, y: bounds.midY, width: bounds.width, height: 40),
                 withAttributes: [.font: NSFont.systemFont(ofSize: 20),
-                                 .foregroundColor: labelColor, .paragraphStyle: style])
+                                 .foregroundColor: labelColor, .shadow: titleShadow, .paragraphStyle: style])
         }
         if let statusMessage {
             let width = min(720, bounds.width - 80)
@@ -677,6 +697,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private let store = LauncherStore.shared
     private var window: NSWindow!
     private var wallpaperView: WallpaperView!
+    private var backgroundEffect: NSVisualEffectView!
     private var wallpaperURL: URL?
     private var grid: GridView!
     private var pageIndicator: PageIndicatorView!
@@ -737,12 +758,16 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         }
         wallpaperView = WallpaperView(frame: NSRect(origin: .zero, size: frame.size))
         window.contentView = wallpaperView
-        let backdrop = NSVisualEffectView(frame: NSRect(origin: .zero, size: frame.size))
-        backdrop.material = .fullScreenUI
-        backdrop.blendingMode = .withinWindow
-        backdrop.state = .active
+        backgroundEffect = NSVisualEffectView(frame: NSRect(origin: .zero, size: frame.size))
+        backgroundEffect.state = .active
+        backgroundEffect.isEmphasized = false
+        backgroundEffect.autoresizingMask = [.width, .height]
+        wallpaperView.addSubview(backgroundEffect)
+        // Keep the material out of the animated icon layer.
+        let backdrop = NSView(frame: NSRect(origin: .zero, size: frame.size))
         backdrop.autoresizingMask = [.width, .height]
         wallpaperView.addSubview(backdrop)
+        wallpaperView.onAppearanceChanged = { [weak self] in self?.updateBackgroundAppearance() }
         backdrop.addSubview(grid)
         pageIndicator = PageIndicatorView(frame: NSRect(origin: .zero, size: frame.size))
         pageIndicator.autoresizingMask = [.width, .height]
@@ -881,8 +906,19 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private func applyTheme() {
         let theme = LauncherTheme(rawValue: store.data.preferences.theme) ?? .system
         window.appearance = theme.appearance
+        updateBackgroundAppearance()
         grid.needsDisplay = true
         pageIndicator?.needsDisplay = true
+    }
+
+    private func updateBackgroundAppearance() {
+        guard window != nil, backgroundEffect != nil else { return }
+        let light = window.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) != .darkAqua
+        window.isOpaque = !light
+        window.backgroundColor = light ? .clear : NSColor(calibratedWhite: 0.23, alpha: 1)
+        wallpaperView.showsWallpaper = !light
+        backgroundEffect.material = .fullScreenUI
+        backgroundEffect.blendingMode = light ? .behindWindow : .withinWindow
     }
 
     private func applyLanguage() {
