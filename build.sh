@@ -60,6 +60,10 @@ cat > "$PACKAGE_DIR/安装说明.txt" <<'EOF'
 启动台安装说明
 
 手动安装：
+推荐下载 DMG：双击挂载后，将“启动台”拖入右侧 Applications 文件夹，再从“应用程序”打开。
+安装完成后可在访达侧边栏推出“启动台”磁盘映像。
+
+ZIP 备用安装：
 1. 将“启动台.app”拖入旁边的“应用程序”快捷方式。
 2. 从“应用程序”打开启动台。升级时请先退出旧版，并在复制时选择替换。
 
@@ -76,3 +80,4 @@ EOF
 ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "$ZIP_PATH"
 
 printf '已生成：%s（arm64 + x86_64）\n' "$ZIP_PATH"
+bash ./scripts/build-dmg.sh

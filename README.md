@@ -2,7 +2,7 @@
 
 **简体中文** · [繁體中文](README.zh-Hant.md) · [English](README.en.md)
 
-用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.32**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
+用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.33**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。推荐下载 DMG，双击即可打开拖拽安装窗口。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
 
 ## 功能
 
@@ -18,20 +18,22 @@
 
 ## 构建
 
-需要 macOS、Apple 命令行开发工具（`xcode-select --install`）和 Swift 编译器。仓库根目录运行：
+需要 macOS、Apple 命令行开发工具（`xcode-select --install`）、Swift 编译器和 Python 3.10 或更高版本。仓库根目录运行：
 
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
 
-脚本分别编译 arm64 和 x86_64，然后合并成一个通用二进制，在 `dist/` 中生成 `启动台.app` 和 `启动台-通用版.zip`。它使用本机 macOS SDK 编译，并对合并后的应用执行临时签名。这个构建没有经过 Apple 公证。
+脚本分别编译 arm64 和 x86_64，然后合并成一个通用二进制，在 `dist/` 中生成 `启动台.app`、`启动台-通用版.dmg` 和备用的 `启动台-通用版.zip`。首次构建会在 `.build/dmg-tools` 创建 Python 虚拟环境并安装 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包依赖，需要联网；后续可复用。若 `python3` 版本较旧，可用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定解释器。DMG 使用自定义背景、固定图标位置和 Applications 快捷方式。脚本使用本机 macOS SDK 编译，并对合并后的应用执行临时签名。这个构建没有经过 Apple 公证。
 
 ## 安装与使用
 
 ### 手动安装
 
-从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 ZIP。解压后，将“启动台.app”拖到同一文件夹内的“应用程序”快捷方式，再从 `/Applications` 打开。若已有旧版本，请先退出旧应用并在复制时选择替换。开机自启动需要应用位于 `/Applications`。
+从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 **DMG**。双击挂载后，窗口左侧显示“启动台”，右侧显示 **Applications** 文件夹，中间有拖拽箭头。将启动台拖入右侧文件夹，再从 `/Applications` 打开；安装完成后可在访达侧边栏推出“启动台”磁盘映像。窗口下方保留安装说明和旧版残留清理工具。
+
+若已有旧版本，请先退出旧应用并在复制时选择替换。开机自启动需要应用位于 `/Applications`。也提供备用 ZIP：解压后，将“启动台.app”拖到同一文件夹内的“应用程序”快捷方式即可。
 
 ### Homebrew 安装
 
@@ -86,7 +88,7 @@ sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
 
 如果想连设置一起删除，请先打开已安装的启动台，点击搜索框旁的齿轮，在设置底部选择 **“完全卸载启动台…”** 并确认。应用会移除登录项，将自身移到废纸篓，再删除应用数据、偏好、缓存和窗口状态。
 
-如果旧版应用已经从“应用程序”移走，可解压新版安装包，双击其中的 **`清理旧版残留.command`**，按提示确认清理。这个工具只删除启动台自己的用户数据；若“系统设置 > 通用 > 登录项”还显示旧条目，请在系统设置中移除。重新安装或升级时，直接替换应用即可，无需运行清理工具。
+如果旧版应用已经从“应用程序”移走，可双击挂载新版 DMG（或解压备用 ZIP），双击其中的 **`清理旧版残留.command`**，按提示确认清理。这个工具只删除启动台自己的用户数据；若“系统设置 > 通用 > 登录项”还显示旧条目，请在系统设置中移除。重新安装或升级时，直接替换应用即可，无需运行清理工具。
 
 ## 实现说明
 

@@ -862,10 +862,12 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
               appURL.deletingLastPathComponent().path != "/Applications" else { return false }
         let alert = NSAlert()
         alert.messageText = L("安装启动台")
-        let hasShortcut = FileManager.default.fileExists(atPath:
-            appURL.deletingLastPathComponent().appendingPathComponent("应用程序").path)
+        let hasShortcut = ["Applications", "应用程序"].contains { name in
+            FileManager.default.fileExists(atPath:
+                appURL.deletingLastPathComponent().appendingPathComponent(name).path)
+        }
         alert.informativeText = hasShortcut
-            ? L("请将“启动台.app”拖到解压目录里的“应用程序”快捷方式。安装完成后，从“应用程序”打开启动台。")
+            ? L("请将“启动台.app”拖到旁边的应用程序文件夹快捷方式。安装完成后，从“应用程序”打开启动台。")
             : L("请在访达中将“启动台.app”拖到“应用程序”（/Applications）。安装完成后，从“应用程序”打开启动台。")
         alert.addButton(withTitle: L("在访达中显示"))
         alert.addButton(withTitle: L("暂时运行"))

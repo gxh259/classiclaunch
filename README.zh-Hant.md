@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · **繁體中文** · [English](README.en.md)
 
-以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.32**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。最低部署目標為 macOS 15.0；目前已在 macOS 27.0 / Apple M1 上驗證原生執行，x86_64 自我測試已透過 Rosetta 驗證，尚未在 Intel 實機上驗證執行。
+以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.33**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。建議下載 DMG，按兩下即可開啟拖曳安裝視窗。最低部署目標為 macOS 15.0；目前已在 macOS 27.0 / Apple M1 上驗證原生執行，x86_64 自我測試已透過 Rosetta 驗證，尚未在 Intel 實機上驗證執行。
 
 安裝包中的檔案名稱仍為簡體中文，例如 `启动台.app`；以下指令及路徑保留實際名稱，可直接複製使用。
 
@@ -20,20 +20,22 @@
 
 ## 建置
 
-需要 macOS、Apple 命令列開發工具（`xcode-select --install`）及 Swift 編譯器。在儲存庫根目錄執行：
+需要 macOS、Apple 命令列開發工具（`xcode-select --install`）、Swift 編譯器及 Python 3.10 或更新版本。在儲存庫根目錄執行：
 
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
 
-腳本分別編譯 arm64 和 x86_64，再合併為通用執行檔，於 `dist/` 產生 `启动台.app` 和 `启动台-通用版.zip`。使用本機 macOS SDK 編譯，並對合併後的應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
+腳本分別編譯 arm64 和 x86_64，再合併為通用執行檔，於 `dist/` 產生 `启动台.app`、`启动台-通用版.dmg` 及備用的 `启动台-通用版.zip`。首次建置會在 `.build/dmg-tools` 建立 Python 虛擬環境，並安裝 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包相依套件，需要連線至網路；之後可重複使用。若 `python3` 版本較舊，可使用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定直譯器。DMG 使用自訂背景、固定圖示位置及 Applications 捷徑。腳本使用本機 macOS SDK 編譯，並對合併後的應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
 
 ## 安裝與使用
 
 ### 手動安裝
 
-從 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下載通用版 ZIP。解壓縮後，將 `启动台.app` 拖到同一資料夾內名為 `应用程序` 的捷徑，再從 `/Applications` 開啟。若已有舊版本，請先結束舊版，並在複製時選擇取代。登入時啟動需要應用程式位於 `/Applications`。
+從 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下載通用版 **DMG**。按兩下掛載後，視窗左側顯示啟動台，右側顯示 **Applications** 資料夾，中間有拖曳箭頭。將啟動台拖入右側資料夾，再從 `/Applications` 開啟；安裝完成後，可在 Finder 側邊欄退出「启动台」磁碟映像。視窗下方保留安裝說明及舊版殘留清理工具。
+
+若已有舊版本，請先結束舊版，並在複製時選擇取代。登入時啟動需要應用程式位於 `/Applications`。也提供備用 ZIP：解壓縮後，將 `启动台.app` 拖到同一資料夾內名為 `应用程序` 的捷徑即可。
 
 ### Homebrew 安裝
 
@@ -88,7 +90,7 @@ sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
 
 若要一併刪除設定，請先開啟已安裝的啟動台，點按搜尋欄旁的齒輪，在設定底部選擇 **「完整解除安裝啟動台…」** 並確認。應用程式會移除登入項目，將自身移到垃圾桶，再刪除應用程式資料、偏好設定、快取及視窗狀態。
 
-若舊版應用程式已從「應用程式」移走，可解壓縮新版安裝包，按兩下其中的 **`清理旧版残留.command`**，依提示確認清理。此工具只會刪除啟動台自己的使用者資料；若「系統設定 > 一般 > 登入項目」仍顯示舊項目，請在系統設定中移除。重新安裝或升級時，直接取代應用程式即可，不需要執行清理工具。
+若舊版應用程式已從「應用程式」移走，可按兩下掛載新版 DMG（或解壓縮備用 ZIP），再按兩下其中的 **`清理旧版残留.command`**，依提示確認清理。此工具只會刪除啟動台自己的使用者資料；若「系統設定 > 一般 > 登入項目」仍顯示舊項目，請在系統設定中移除。重新安裝或升級時，直接取代應用程式即可，不需要執行清理工具。
 
 ## 實作說明
 

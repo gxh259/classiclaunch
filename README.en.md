@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.32**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.33**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended download is a DMG that opens a drag-to-install window. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
 
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 
@@ -20,20 +20,22 @@ The files in the installation package retain their Simplified Chinese names, inc
 
 ## Build
 
-Requires macOS, Apple's command line developer tools (`xcode-select --install`), and the Swift compiler. Run these commands from the repository root:
+Requires macOS, Apple's command line developer tools (`xcode-select --install`), the Swift compiler, and Python 3.10 or later. Run these commands from the repository root:
 
 ```bash
 chmod +x build.sh
 ./build.sh
 ```
 
-The script compiles arm64 and x86_64 separately, merges them into a universal executable, and generates `启动台.app` and `启动台-通用版.zip` in `dist/`. It builds against the local macOS SDK and applies an ad hoc signature to the merged app. The build is not notarized by Apple.
+The script compiles arm64 and x86_64 separately, merges them into a universal executable, and generates `启动台.app`, `启动台-通用版.dmg`, and a fallback `启动台-通用版.zip` in `dist/`. On the first build, it creates a Python virtual environment in `.build/dmg-tools` and installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) and pinned packaging dependencies. This requires network access; later builds can reuse the environment. If your default `python3` is too old, select an interpreter with `PYTHON_BIN=/path/to/python3 ./build.sh`. The DMG includes a custom background, fixed icon positions, and an Applications shortcut. The script builds against the local macOS SDK and applies an ad hoc signature to the merged app. The build is not notarized by Apple.
 
 ## Installation and Usage
 
 ### Manual installation
 
-Download the universal ZIP from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases). Extract it, drag `启动台.app` onto the shortcut named `应用程序` in the same folder, and open the app from `/Applications`. To upgrade, quit the old version first and choose to replace it when copying the new app. Launch at Login requires the app to be installed in `/Applications`.
+Download the universal **DMG** from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases). Double-click to mount it. The window shows Launchpad on the left, an **Applications** folder on the right, and an arrow between them. Drag Launchpad onto the folder, then open it from `/Applications`. After installation, eject the “启动台” disk image from Finder's sidebar. Installation notes and the legacy cleanup tool remain available at the bottom of the window.
+
+To upgrade, quit the old version first and choose to replace it when copying the new app. Launch at Login requires the app to be installed in `/Applications`. A fallback ZIP is also available: extract it and drag `启动台.app` onto the shortcut named `应用程序` in the same folder.
 
 ### Homebrew installation
 
@@ -88,7 +90,7 @@ Moving `启动台.app` to the Trash in Finder does not automatically delete user
 
 To remove settings as well, open the installed app, click the gear beside the search field, and select **Completely Uninstall Launchpad…** at the bottom of Settings. After confirmation, the app removes the login item, moves itself to the Trash, and deletes its app data, preferences, caches, and saved window state.
 
-If an older version has already been removed from Applications, extract the new installation package and double-click **`清理旧版残留.command`**. Follow the prompts to confirm cleanup. The tool only deletes Launchpad's own user data. If an old entry remains in **System Settings > General > Login Items**, remove it in System Settings. To reinstall or upgrade, simply replace the app; you do not need to run the cleanup tool.
+If an older version has already been removed from Applications, double-click to mount the new DMG (or extract the fallback ZIP), then double-click **`清理旧版残留.command`**. Follow the prompts to confirm cleanup. The tool only deletes Launchpad's own user data. If an old entry remains in **System Settings > General > Login Items**, remove it in System Settings. To reinstall or upgrade, simply replace the app; you do not need to run the cleanup tool.
 
 ## Implementation Notes
 
