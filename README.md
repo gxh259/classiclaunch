@@ -1,5 +1,7 @@
 # 启动台（ClassicLaunchpad）
 
+**简体中文** · [繁體中文](README.zh-Hant.md) · [English](README.en.md)
+
 用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.32**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
 
 ## 功能
