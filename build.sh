@@ -71,7 +71,11 @@ Homebrew 安装：
 brew tap gxh259/classiclaunch https://github.com/gxh259/classiclaunch.git
 brew install --cask gxh259/classiclaunch/classiclaunch
 
-本应用使用临时签名，尚未经过 Apple 公证。如果 macOS 阻止打开，请先在访达中右键“启动台.app”并选择“打开”。确认安装包来源可信后，如仍被隔离标记阻止，可在终端运行：
+本应用使用临时签名，尚未经过 Apple 公证。如果 macOS 阻止打开，确认安装包来源可信且未被篡改后，请先尝试打开一次应用，再到“系统设置 > 隐私与安全性”向下滚动，点击“仍要打开”，按系统提示确认。
+DMG 中保留了该流程的操作示意图；图中的按钮仅供示意，需在系统设置中操作。
+Apple 官方操作说明：https://support.apple.com/zh-cn/102445
+
+确认安装包来源可信后，如仍被隔离标记阻止，可在终端运行：
 sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
 
 这条 xattr 命令仅清除隔离标记，不会执行签名验证，也不能代替 Apple 公证。如需检查应用签名完整性，可运行：

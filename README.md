@@ -2,7 +2,7 @@
 
 **简体中文** · [繁體中文](README.zh-Hant.md) · [English](README.en.md)
 
-用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.33**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。推荐下载 DMG，双击即可打开拖拽安装窗口。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
+用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.34**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。推荐下载 DMG，双击即可打开拖拽安装窗口。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
 
 ## 功能
 
@@ -31,7 +31,7 @@ chmod +x build.sh
 
 ### 手动安装
 
-从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 **DMG**。双击挂载后，窗口左侧显示“启动台”，右侧显示 **Applications** 文件夹，中间有拖拽箭头。将启动台拖入右侧文件夹，再从 `/Applications` 打开；安装完成后可在访达侧边栏推出“启动台”磁盘映像。窗口下方保留安装说明和旧版残留清理工具。
+从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 **DMG**。双击挂载后，窗口左侧显示“启动台”，右侧显示 **Applications** 文件夹，中间有拖拽箭头。将启动台拖入右侧文件夹，再从 `/Applications` 打开；安装完成后可在访达侧边栏推出“启动台”磁盘映像。窗口下方保留红色“安装后若提示无法打开”提示，以及“隐私与安全性 → 仍要打开”的操作示意图，并提供安装说明和旧版残留清理工具。
 
 若已有旧版本，请先退出旧应用并在复制时选择替换。开机自启动需要应用位于 `/Applications`。也提供备用 ZIP：解压后，将“启动台.app”拖到同一文件夹内的“应用程序”快捷方式即可。
 
@@ -48,7 +48,9 @@ brew install --cask gxh259/classiclaunch/classiclaunch
 
 ### 首次打开与签名
 
-本应用使用临时签名，尚未经过 Apple 公证。如果 macOS 阻止打开，请先在访达中右键“启动台.app”并选择“打开”。确认下载来源可信后，如仍被隔离标记阻止，可在终端运行：
+本应用使用临时签名，尚未经过 Apple 公证。确认安装包来源可信且未被篡改后，如果 macOS 阻止打开，请先尝试打开一次应用，再进入 **“系统设置 > 隐私与安全性”**，向下滚动并点击 **“仍要打开”**，按系统提示确认。详见 [Apple 官方操作说明](https://support.apple.com/zh-cn/102445)。DMG 中保留了该流程的示意图，图中按钮仅供示意，需要在系统设置中操作。
+
+确认下载来源可信后，如仍被隔离标记阻止，可在终端运行：
 
 ```bash
 sudo xattr -r -d com.apple.quarantine /Applications/启动台.app

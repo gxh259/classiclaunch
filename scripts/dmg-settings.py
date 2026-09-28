@@ -13,7 +13,7 @@ files = [
 symlinks = {"Applications": "/Applications"}
 icon = str(root / ".build" / "AppIcon.icns")
 background = str(root / ".build" / "dmg-background.tiff")
-window_rect = ((160, 160), (720, 480))
+window_rect = ((160, 160), (720, 750))
 default_view = "icon-view"
 show_status_bar = False
 show_tab_view = False
@@ -35,6 +35,6 @@ hide_extensions = ["安装说明.txt", "清理旧版残留.command"]
 icon_locations = {
     "启动台.app": (180, 190),
     "Applications": (540, 190),
-    "安装说明.txt": (240, 390),
-    "清理旧版残留.command": (480, 390),
+    "安装说明.txt": (240, 667),
+    "清理旧版残留.command": (480, 667),
 }

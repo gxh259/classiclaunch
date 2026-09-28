@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.33**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended download is a DMG that opens a drag-to-install window. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.34**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended download is a DMG that opens a drag-to-install window. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
 
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 
@@ -33,7 +33,7 @@ The script compiles arm64 and x86_64 separately, merges them into a universal ex
 
 ### Manual installation
 
-Download the universal **DMG** from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases). Double-click to mount it. The window shows Launchpad on the left, an **Applications** folder on the right, and an arrow between them. Drag Launchpad onto the folder, then open it from `/Applications`. After installation, eject the “启动台” disk image from Finder's sidebar. Installation notes and the legacy cleanup tool remain available at the bottom of the window.
+Download the universal **DMG** from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases). Double-click to mount it. The window shows Launchpad on the left, an **Applications** folder on the right, and an arrow between them. Drag Launchpad onto the folder, then open it from `/Applications`. After installation, eject the “启动台” disk image from Finder's sidebar. The lower part of the window retains a red warning for apps that cannot be opened and a Privacy & Security → Open Anyway illustration, followed by installation notes and the legacy cleanup tool. The illustration is in Simplified Chinese with English hints.
 
 To upgrade, quit the old version first and choose to replace it when copying the new app. Launch at Login requires the app to be installed in `/Applications`. A fallback ZIP is also available: extract it and drag `启动台.app` onto the shortcut named `应用程序` in the same folder.
 
@@ -50,7 +50,9 @@ Use `brew upgrade --cask gxh259/classiclaunch/classiclaunch` to update, or `brew
 
 ### First launch and signing
 
-The app uses an ad hoc signature and is not notarized by Apple. If macOS blocks it from opening, first right-click `启动台.app` in Finder and select **Open**. After confirming that you trust the download source, if the quarantine flag still blocks the app, run this command in Terminal:
+The app uses an ad hoc signature and is not notarized by Apple. After confirming that the download source is trustworthy and the app has not been tampered with, if macOS blocks it, try opening the app once, then go to **System Settings > Privacy & Security**, scroll down, click **Open Anyway**, and follow the confirmation prompts. See [Apple’s official instructions](https://support.apple.com/en-us/102445). The DMG retains an illustration of this process; its button is illustrative, so perform the action in System Settings.
+
+If the quarantine flag still blocks the app after you have confirmed that you trust its source, run this command in Terminal:
 
 ```bash
 sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
