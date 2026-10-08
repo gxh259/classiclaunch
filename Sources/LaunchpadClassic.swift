@@ -27,23 +27,55 @@ enum LauncherIcon {
     }
 }
 
-enum GridLayout: String, CaseIterable {
-    case fiveBySeven = "5×7"
-    case sixByEight = "6×8"
-    case sevenBySeven = "7×7"
+enum GridLayout: Equatable {
+    case fiveBySeven, sixByEight, sevenByEight, sevenByNine
+    case custom(rows: Int, columns: Int)
+
+    static let presets: [GridLayout] = [.fiveBySeven, .sixByEight, .sevenByEight, .sevenByNine]
+    static let allowedRows = 2...12
+    static let allowedColumns = 3...16
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "5×7": self = .fiveBySeven
+        case "6×8": self = .sixByEight
+        case "7×8": self = .sevenByEight
+        case "7×9": self = .sevenByNine
+        case "7×7": self = .custom(rows: 7, columns: 7) // Preserve existing layouts.
+        default:
+            guard rawValue.hasPrefix("custom:") else { return nil }
+            let values = rawValue.dropFirst("custom:".count).split(separator: "×")
+            guard values.count == 2, let rows = Int(values[0]), let columns = Int(values[1]),
+                  Self.allowedRows.contains(rows), Self.allowedColumns.contains(columns) else { return nil }
+            self = .custom(rows: rows, columns: columns)
+        }
+    }
+
+    var rawValue: String {
+        switch self {
+        case .fiveBySeven: "5×7"
+        case .sixByEight: "6×8"
+        case .sevenByEight: "7×8"
+        case .sevenByNine: "7×9"
+        case let .custom(rows, columns): "custom:\(rows)×\(columns)"
+        }
+    }
 
     var rows: Int {
         switch self {
         case .fiveBySeven: 5
         case .sixByEight: 6
-        case .sevenBySeven: 7
+        case .sevenByEight, .sevenByNine: 7
+        case let .custom(rows, _): rows
         }
     }
 
     var columns: Int {
         switch self {
-        case .fiveBySeven, .sevenBySeven: 7
-        case .sixByEight: 8
+        case .fiveBySeven: 7
+        case .sixByEight, .sevenByEight: 8
+        case .sevenByNine: 9
+        case let .custom(_, columns): columns
         }
     }
 }
@@ -470,7 +502,7 @@ final class GridView: NSView {
         let cellW = min(260, (bounds.width - 110) / CGFloat(columns))
         let topInset: CGFloat = 125
         let bottomInset = pageIndicatorY + 42
-        let cellH = min(215, max(60, (bounds.height - topInset - bottomInset) / CGFloat(rows)))
+        let cellH = min(215, max(1, (bounds.height - topInset - bottomInset) / CGFloat(rows)))
         return (NSRect(x: (bounds.width - CGFloat(columns) * cellW) / 2,
                        y: bounds.height - topInset - CGFloat(rows) * cellH,
                        width: CGFloat(columns) * cellW,
@@ -500,10 +532,18 @@ final class GridView: NSView {
         let local = index - page * pageSize
         let x = rect.minX + CGFloat(local % columns) * cellW
         let y = rect.maxY - CGFloat(local / columns + 1) * cellH
-        let size = max(32, min(112, cellW - 38, cellH - 48))
-        let icon = NSRect(x: x + (cellW - size) / 2, y: y + cellH - size - 8, width: size, height: size)
-        let label = NSRect(x: x + 3, y: y + 7, width: cellW - 6, height: 31)
+        let (icon, label) = tileFrames(x: x, y: y, cellW: cellW, cellH: cellH)
         return icon.insetBy(dx: -5, dy: -5).contains(point) || label.contains(point) ? index : nil
+    }
+
+    private func tileFrames(x: CGFloat, y: CGFloat, cellW: CGFloat, cellH: CGFloat) -> (NSRect, NSRect) {
+        let labelHeight = min(31, max(12, cellH * 0.27))
+        let iconSize = max(12, min(112, cellW - 12, cellH - labelHeight - 5))
+        let icon = NSRect(x: x + (cellW - iconSize) / 2,
+                          y: y + labelHeight + max(2, (cellH - labelHeight - iconSize) / 2),
+                          width: iconSize, height: iconSize)
+        let label = NSRect(x: x + 3, y: y + 2, width: cellW - 6, height: labelHeight)
+        return (icon, label)
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -531,27 +571,27 @@ final class GridView: NSView {
                 let col = local % cols, row = local / cols
                 let x = rect.minX + CGFloat(col) * cellW
                 let y = rect.maxY - CGFloat(row + 1) * cellH
-                let iconSize = max(32, min(112, cellW - 38, cellH - 48))
-                let iconRect = NSRect(x: x + (cellW - iconSize) / 2,
-                                      y: y + cellH - iconSize - 8,
-                                      width: iconSize, height: iconSize)
+                let (iconRect, titleRect) = tileFrames(x: x, y: y, cellW: cellW, cellH: cellH)
+                let iconSize = iconRect.width
                 let tile = tiles[index]
                 if tile.ref.kind == "folder" {
                     (isDark ? NSColor.white.withAlphaComponent(0.58) : NSColor.white.withAlphaComponent(0.85)).setFill()
-                    NSBezierPath(roundedRect: iconRect, xRadius: 23, yRadius: 23).fill()
-                    let miniSize = (iconSize - 24) / 3
+                    NSBezierPath(roundedRect: iconRect, xRadius: iconSize * 0.2,
+                                 yRadius: iconSize * 0.2).fill()
+                    let padding = max(2, iconSize * 0.08)
+                    let gap = max(1, iconSize * 0.04)
+                    let miniSize = max(2, (iconSize - 2 * padding - 2 * gap) / 3)
                     for (number, icon) in tile.icons.prefix(9).enumerated() {
-                        icon.draw(in: NSRect(x: iconRect.minX + 7 + CGFloat(number % 3) * (miniSize + 5),
-                                             y: iconRect.minY + 7 + CGFloat(2 - number / 3) * (miniSize + 5),
+                        icon.draw(in: NSRect(x: iconRect.minX + padding + CGFloat(number % 3) * (miniSize + gap),
+                                             y: iconRect.minY + padding + CGFloat(2 - number / 3) * (miniSize + gap),
                                              width: miniSize, height: miniSize))
                     }
                 } else { tile.icons.first?.draw(in: iconRect) }
-                let titleRect = NSRect(x: x + 3, y: y + 7, width: cellW - 6, height: 31)
                 let paragraph = NSMutableParagraphStyle()
                 paragraph.alignment = .center
                 paragraph.lineBreakMode = .byTruncatingTail
                 (tile.title as NSString).draw(in: titleRect, withAttributes: [
-                    .font: NSFont.systemFont(ofSize: 16, weight: .medium),
+                    .font: NSFont.systemFont(ofSize: min(16, max(9, cellH * 0.23)), weight: .medium),
                     .foregroundColor: labelColor,
                     .shadow: folderMode && !isDark ? NSShadow() : titleShadow,
                     .paragraphStyle: paragraph
@@ -705,6 +745,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private var settingsButton: NSButton!
     private var settingsPanel: NSPanel?
     private var settingsScrollView: NSScrollView?
+    private var customRowsField: NSTextField?
+    private var customColumnsField: NSTextField?
     private var refreshButton: NSButton!
     private var model: LauncherModel!
     private var activeFolderID: String?
@@ -972,12 +1014,37 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     func controlTextDidChange(_ obj: Notification) { refreshGrid() }
 
     @objc private func changeLayout(_ sender: Any?) {
-        guard let raw = (sender as? NSPopUpButton)?.selectedItem?.representedObject as? String,
-              let layout = GridLayout(rawValue: raw) else { return }
+        guard let raw = (sender as? NSPopUpButton)?.selectedItem?.representedObject as? String else { return }
+        let layout: GridLayout
+        if raw == "custom" {
+            layout = .custom(rows: grid.layout.rows, columns: grid.layout.columns)
+        } else {
+            guard let preset = GridLayout(rawValue: raw) else { return }
+            layout = preset
+        }
+        applyLayout(layout)
+    }
+
+    private func applyLayout(_ layout: GridLayout) {
         grid.layout = layout
         store.updatePreferences { $0.gridLayout = layout.rawValue }
         updatePageIndicator()
         scheduleSettingsPanelRefresh()
+    }
+
+    @objc private func applyCustomLayout(_ sender: Any?) {
+        guard let rowsField = customRowsField, let columnsField = customColumnsField else { return }
+        let rows = Int(rowsField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines))
+        let columns = Int(columnsField.stringValue.trimmingCharacters(in: .whitespacesAndNewlines))
+        guard let rows, let columns, GridLayout.allowedRows.contains(rows),
+              GridLayout.allowedColumns.contains(columns) else {
+            let alert = NSAlert()
+            alert.messageText = L("网格数值无效")
+            alert.informativeText = L("行数需为 2–12，列数需为 3–16。")
+            if let settingsPanel { alert.beginSheetModal(for: settingsPanel) }
+            return
+        }
+        applyLayout(.custom(rows: rows, columns: columns))
     }
 
     private func refreshGrid() {
@@ -1155,14 +1222,41 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         row(L("主题"), control: themePopup)
 
         let layoutPopup = NSPopUpButton(frame: .zero, pullsDown: false)
-        for layout in GridLayout.allCases {
+        for layout in GridLayout.presets {
             layoutPopup.addItem(withTitle: layout.rawValue)
             layoutPopup.lastItem?.representedObject = layout.rawValue
         }
-        layoutPopup.selectItem(withTitle: grid.layout.rawValue)
+        layoutPopup.addItem(withTitle: L("自定义"))
+        layoutPopup.lastItem?.representedObject = "custom"
+        if case .custom = grid.layout { layoutPopup.selectItem(withTitle: L("自定义")) }
+        else { layoutPopup.selectItem(withTitle: grid.layout.rawValue) }
         layoutPopup.target = self
         layoutPopup.action = #selector(changeLayout(_:))
         row(L("网格布局"), control: layoutPopup)
+
+        customRowsField = nil
+        customColumnsField = nil
+        if case .custom = grid.layout {
+            let inputs = NSView(frame: .zero)
+            let rowsLabel = NSTextField(labelWithString: L("行"))
+            rowsLabel.frame = NSRect(x: 0, y: 5, width: 25, height: 20)
+            inputs.addSubview(rowsLabel)
+            let rowsField = NSTextField(frame: NSRect(x: 30, y: 0, width: 60, height: 27))
+            rowsField.stringValue = String(grid.layout.rows)
+            inputs.addSubview(rowsField)
+            let columnsLabel = NSTextField(labelWithString: L("列"))
+            columnsLabel.frame = NSRect(x: 100, y: 5, width: 25, height: 20)
+            inputs.addSubview(columnsLabel)
+            let columnsField = NSTextField(frame: NSRect(x: 130, y: 0, width: 60, height: 27))
+            columnsField.stringValue = String(grid.layout.columns)
+            inputs.addSubview(columnsField)
+            let applyButton = button(L("应用布局"), action: #selector(applyCustomLayout(_:)))
+            applyButton.frame = NSRect(x: 200, y: 0, width: 106, height: 27)
+            inputs.addSubview(applyButton)
+            customRowsField = rowsField
+            customColumnsField = columnsField
+            row(L("自定义网格（行 2–12，列 3–16）"), control: inputs)
+        }
 
         section(L("启动与行为"))
         let loginRegistered = LoginStartup.shared.isEnabled
@@ -1702,6 +1796,33 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                 : "Dock database unavailable")
             for app in entries.prefix(5) { print("\(app.name): \(app.url.path)") }
             exit(entries.isEmpty ? 1 : 0)
+        }
+        if CommandLine.arguments.contains("--self-test-grid-layout") {
+            guard GridLayout.presets.map(\.rawValue) == ["5×7", "6×8", "7×8", "7×9"],
+                  GridLayout(rawValue: "7×7") == .custom(rows: 7, columns: 7),
+                  GridLayout(rawValue: "custom:12×16") == .custom(rows: 12, columns: 16),
+                  GridLayout(rawValue: "custom:13×16") == nil,
+                  GridLayout(rawValue: "custom:0×0") == nil else {
+                fatalError("Grid layout presets or legacy parsing failed")
+            }
+            let directory = FileManager.default.temporaryDirectory
+                .appendingPathComponent("classic-launchpad-grid-test-\(UUID().uuidString)")
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let file = directory.appendingPathComponent("Data.store")
+            let store = LauncherStore(fileURL: file, legacyDefaults: nil)
+            store.updatePreferences { $0.gridLayout = GridLayout.custom(rows: 9, columns: 11).rawValue }
+            let reloaded = LauncherStore(fileURL: file, legacyDefaults: nil)
+            guard GridLayout(rawValue: reloaded.data.preferences.gridLayout ?? "") ==
+                  .custom(rows: 9, columns: 11) else { fatalError("Custom grid did not persist") }
+            let grid = GridView(frame: NSRect(x: 0, y: 0, width: 1920, height: 1080))
+            grid.tiles = (0..<120).map { DisplayTile(ref: TileRef(kind: "app", id: "test.\($0)"),
+                                                   title: "Test", icons: []) }
+            grid.layout = .sevenByNine
+            guard grid.numberOfPages == 2 else { fatalError("7×9 pagination failed") }
+            grid.layout = .custom(rows: 2, columns: 3)
+            guard grid.numberOfPages == 20 else { fatalError("Custom pagination failed") }
+            print("Grid layout self-test passed")
+            return
         }
         if CommandLine.arguments.contains("--self-test-model") {
             let suiteName = "local.codex.classiclaunchpad.selftest.\(UUID().uuidString)"

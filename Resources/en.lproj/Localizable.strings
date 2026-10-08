@@ -94,3 +94,11 @@
 "隐藏应用" = "Hide App";
 "需要系统允许" = "Requires system approval";
 "黑暗" = "Dark";
+
+"自定义" = "Custom";
+"行" = "Rows";
+"列" = "Columns";
+"应用布局" = "Apply Layout";
+"自定义网格（行 2–12，列 3–16）" = "Custom grid (2–12 rows, 3–16 columns)";
+"网格数值无效" = "Invalid Grid Size";
+"行数需为 2–12，列数需为 3–16。" = "Enter 2–12 rows and 3–16 columns.";
