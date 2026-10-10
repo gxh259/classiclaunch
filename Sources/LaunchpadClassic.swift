@@ -1498,7 +1498,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         let alert = NSAlert()
         alert.alertStyle = .warning
         alert.messageText = L("完全卸载启动台？")
-        alert.informativeText = L("将“启动台.app”移到废纸篓，并删除图标排序、文件夹、应用别名、隐藏状态和其他设置；同时移除开机自启动。此操作无法撤销。")
+        alert.informativeText = L("将“启动台.app”移到废纸篓，从 Dock 移除启动台图标，并删除图标排序、文件夹、应用别名、隐藏状态和其他设置；同时移除开机自启动。此操作无法撤销。")
         alert.addButton(withTitle: L("卸载并删除数据"))
         alert.addButton(withTitle: L("取消"))
         alert.window.level = NSWindow.Level(rawValue: window.level.rawValue + 2)
@@ -1522,14 +1522,17 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                     self.showSettingAlert(L("无法移到废纸篓"), L("访达没有确认移动“启动台.app”，应用数据尚未删除。"))
                     return
                 }
-                do {
-                    try LauncherCleanup().removeLocalData()
-                    self.closeSettingsPanel()
-                    self.window.orderOut(nil)
-                    NSApp.terminate(nil)
-                } catch {
-                    self.showSettingAlert(L("应用已移到废纸篓，但未清理完数据"), error.localizedDescription)
+                var failures: [String] = []
+                do { try LauncherCleanup().removeLocalData() }
+                catch { failures.append(L("应用数据") + "：" + error.localizedDescription) }
+                do { try DockIconCleanup().removeLauncher(at: appURL) }
+                catch { failures.append(L("Dock 图标") + "：" + error.localizedDescription) }
+                if !failures.isEmpty {
+                    self.showSettingAlert(L("卸载后仍有未清理项目"), failures.joined(separator: "\n"))
                 }
+                self.closeSettingsPanel()
+                self.window.orderOut(nil)
+                NSApp.terminate(nil)
             }
         }
     }
@@ -1736,6 +1739,36 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
 @main struct Main {
     static func main() {
+        if CommandLine.arguments.contains("--self-test-dock-cleanup") {
+            let suite = "local.codex.classiclaunchpad.dock-test.\(UUID().uuidString)"
+            let defaults = UserDefaults(suiteName: suite)!
+            defer { defaults.removePersistentDomain(forName: suite) }
+            let appURL = URL(fileURLWithPath: "/Applications/启动台.app", isDirectory: true)
+            func tile(_ identifier: String?, _ url: String, _ label: String) -> [String: Any] {
+                var data: [String: Any] = ["file-label": label,
+                                           "file-data": ["_CFURLString": url, "_CFURLStringType": 15]]
+                if let identifier { data["bundle-identifier"] = identifier }
+                return ["tile-type": "file-tile", "tile-data": data]
+            }
+            let launcher = tile(LauncherCleanup.bundleIdentifier,
+                                "file:///Applications/OldLaunchpad.app/", "启动台")
+            let matchingPath = tile(nil, appURL.absoluteString, "启动台")
+            let unrelated = tile("example.other", "file:///Applications/Other.app/", "启动台")
+            defaults.set([launcher, unrelated], forKey: "persistent-apps")
+            defaults.set([matchingPath, unrelated], forKey: "recent-apps")
+            var restarts = 0
+            let cleanup = DockIconCleanup(defaults: defaults, restartDock: { restarts += 1 })
+            do {
+                guard try cleanup.removeLauncher(at: appURL) == 2,
+                      defaults.array(forKey: "persistent-apps")?.count == 1,
+                      defaults.array(forKey: "recent-apps")?.count == 1,
+                      restarts == 1,
+                      try cleanup.removeLauncher(at: appURL) == 0,
+                      restarts == 1 else { fatalError("Dock cleanup changed an unrelated icon") }
+            } catch { fatalError("Dock cleanup self-test failed: \(error)") }
+            print("Dock cleanup self-test passed")
+            return
+        }
         if CommandLine.arguments.contains("--self-test-installer") {
             let manager = FileManager.default
             let root = manager.temporaryDirectory.appendingPathComponent(

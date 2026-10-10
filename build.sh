@@ -28,6 +28,7 @@ build_arch() {
     Sources/LauncherStore.swift \
     Sources/Localization.swift \
     Sources/LoginStartup.swift \
+    Sources/DockIconCleanup.swift \
     Sources/AppInstaller.swift \
     Sources/LauncherModel.swift \
     Sources/Hotkey.swift \

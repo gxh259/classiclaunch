@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.41**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Double-clicking Launchpad in the recommended DMG starts installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.42**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Double-clicking Launchpad in the recommended DMG starts installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
 
 ## Compatibility reports
 
@@ -10,7 +10,7 @@ A macOS application launcher built with Swift and AppKit. It offers a full-scree
 | --- | --- |
 | Apple M1 / macOS 27.0 | v0.40 has been run locally. |
 | Apple M4 / macOS 15.3 | A user reports that the app runs; the exact app version is unconfirmed. |
-| Apple M4 / macOS 26.5 | A user reports that v0.34 runs, but Finder says it cannot open v0.40 after replacement. The cause is under investigation; v0.41 has not yet been verified on this Mac. |
+| Apple M4 / macOS 26.5 | A user reports that v0.34 runs, but Finder says it cannot open v0.40 after replacement. The cause is under investigation; v0.41–v0.42 have not yet been verified on this Mac. |
 | Intel | x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified. |
 
 If v0.40 will not open, you can temporarily use [v0.34, reported to run on M4 / macOS 26.5](https://github.com/gxh259/classiclaunch/releases/tag/v0.34). Preserve your personal app data while troubleshooting. On the affected Mac, run these two Terminal commands and save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
@@ -35,7 +35,7 @@ The files in the installation package retain their Simplified Chinese names, inc
 - Settings provide Light, Dark, and Follow System themes, Launch at Login, and the option to show or hide the menu bar icon. The interface can follow the system language or use Simplified Chinese, Traditional Chinese, or English.
 - Click the background outside the grid or press Escape to close the launcher. Context menus let you open, rename, hide, or reveal apps in Finder. Third-party apps can also be moved to the Trash when permissions allow.
 - The Light theme uses a transparent window with system frosted glass to show the desktop underneath, including dynamic wallpapers. The Dark theme blurs the desktop wallpaper inside the window. The background is separate from the icon page animation, and the window adapts to display size changes.
-- **Completely Uninstall Launchpad…** removes the app, login item, and local settings.
+- **Completely Uninstall Launchpad…** removes the app, Dock icon, login item, and local settings.
 - A colorful nine-square app icon, with regenerated `.icns` resources to fix malformed small icons that may appear in Finder's Applications list.
 
 ## Build
@@ -110,7 +110,7 @@ You do not need to delete this file when updating the app. To reset all personal
 
 Moving `启动台.app` to the Trash in Finder does not automatically delete user data in `~/Library/Application Support/ClassicLaunchpad`. This is how macOS normally removes apps, and it also preserves your layout if you temporarily move the old app during an upgrade.
 
-To remove settings as well, open the installed app, click the gear beside the search field, and select **Completely Uninstall Launchpad…** at the bottom of Settings. After confirmation, the app removes the login item, moves itself to the Trash, and deletes its app data, preferences, caches, and saved window state.
+To remove settings as well, open the installed app, click the gear beside the search field, and select **Completely Uninstall Launchpad…** at the bottom of Settings. After confirmation, the app removes the login item, moves itself to the Trash, deletes local data, and removes its icon from the Dock's pinned and recent app lists. Dock restarts to refresh the display if an icon was removed; other icons and their order are kept.
 
 The installation packages no longer include the leftover cleanup script. If an older app has already been removed from Applications, you can reinstall it and then use **Completely Uninstall Launchpad…** in Settings. The repository still provides a separate [`清理旧版残留.command`](清理旧版残留.command) for manual use if needed. If an old entry remains in **System Settings > General > Login Items**, remove it in System Settings.
 
@@ -118,4 +118,4 @@ The installation packages no longer include the leftover cleanup script. If an o
 
 App scanning primarily uses `/Applications` and also includes the system Utilities directories. Localized app bundle names take priority over English names inside bundles; user-defined aliases have the highest priority. The Dock Launchpad database is an optional, read-only supplemental source. If the database is missing or its structure is incompatible, it is skipped. The app does not modify system files.
 
-Source code is in `Sources/`. The app's `Info.plist`, localization resources, and original PNG icon are in `Resources/`. The build script generates `.icns` resources from the PNG, including clear large images that Finder can scale to list sizes. The main executable includes command line self-tests for language, icon ordering, and pagination. Run them with `dist/启动台.app/Contents/MacOS/ClassicLaunchpad --self-test-language`, `--self-test-indicator`, `--self-test-scroll`, or `--self-test-gestures`.
+Source code is in `Sources/`. The app's `Info.plist`, localization resources, and original PNG icon are in `Resources/`. The build script generates `.icns` resources from the PNG, including clear large images that Finder can scale to list sizes. The main executable includes command line self-tests for language, icon ordering, pagination, and Dock icon cleanup. Run them with `dist/启动台.app/Contents/MacOS/ClassicLaunchpad --self-test-language`, `--self-test-indicator`, `--self-test-scroll`, `--self-test-gestures`, or `--self-test-dock-cleanup`.
