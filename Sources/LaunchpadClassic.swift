@@ -20,7 +20,7 @@ enum LauncherIcon {
 
     static func dockImage(from original: NSImage) -> NSImage {
         NSImage(size: original.size, flipped: false) { rect in
-            let inset = rect.width * 0.06
+            let inset = rect.width * 0.10
             original.draw(in: rect.insetBy(dx: inset, dy: inset))
             return true
         }
@@ -546,7 +546,7 @@ final class GridView: NSView {
     private func tileFrames(x: CGFloat, y: CGFloat, cellW: CGFloat, cellH: CGFloat) -> (NSRect, NSRect) {
         let labelHeight = min(24, max(12, cellH * 0.24))
         let gap = min(8, max(3, cellH * 0.04))
-        let iconSize = max(8, min(112, cellW - 12, cellH - labelHeight - gap - 2))
+        let iconSize = max(8, min(92, cellW - 12, cellH - labelHeight - gap - 2))
         let groupBottom = y + max(0, (cellH - labelHeight - gap - iconSize) / 2)
         let icon = NSRect(x: x + (cellW - iconSize) / 2,
                           y: groupBottom + labelHeight + gap,
@@ -600,7 +600,7 @@ final class GridView: NSView {
                 paragraph.alignment = .center
                 paragraph.lineBreakMode = .byTruncatingTail
                 (tile.title as NSString).draw(in: titleRect, withAttributes: [
-                    .font: NSFont.systemFont(ofSize: min(16, max(9, cellH * 0.23)), weight: .medium),
+                    .font: NSFont.systemFont(ofSize: min(14, max(9, cellH * 0.23)), weight: .medium),
                     .foregroundColor: labelColor,
                     .shadow: folderMode && !isDark ? NSShadow() : titleShadow,
                     .paragraphStyle: paragraph
@@ -828,14 +828,19 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         pageIndicator.onSwipe = { [weak self] event in self?.grid.swipe(with: event) }
         backdrop.addSubview(pageIndicator)
         grid.onPageChanged = { [weak self] in self?.updatePageIndicator() }
-        search = NSSearchField(frame: NSRect(x: (frame.width - 360) / 2,
-                                           y: frame.height - 105, width: 360, height: 36))
+        search = NSSearchField(frame: .zero)
+        search.controlSize = .large
+        let searchHeight = search.intrinsicContentSize.height
+        search.frame = NSRect(x: (frame.width - 360) / 2,
+                              y: frame.height - 70 - searchHeight,
+                              width: 360, height: searchHeight)
+        search.focusRingType = .none
         search.placeholderString = L("搜索应用")
         search.delegate = self
         search.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
         backdrop.addSubview(search)
-        settingsButton = NSButton(frame: NSRect(x: (frame.width - 360) / 2 + 370,
-                                                y: frame.height - 103, width: 36, height: 32))
+        settingsButton = NSButton(frame: NSRect(x: search.frame.maxX + 10,
+                                                y: search.frame.midY - 16, width: 36, height: 32))
         settingsButton.bezelStyle = .regularSquare
         if let gear = NSImage(systemSymbolName: "gearshape", accessibilityDescription: L("设置")) {
             settingsButton.image = gear.withSymbolConfiguration(
@@ -849,8 +854,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         settingsButton.action = #selector(showSettings(_:))
         settingsButton.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
         backdrop.addSubview(settingsButton)
-        refreshButton = NSButton(frame: NSRect(x: (frame.width - 360) / 2 + 412,
-                                               y: frame.height - 103, width: 36, height: 32))
+        refreshButton = NSButton(frame: NSRect(x: settingsButton.frame.maxX + 6,
+                                               y: search.frame.midY - 16, width: 36, height: 32))
         refreshButton.bezelStyle = .regularSquare
         if let refresh = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: L("重新扫描应用")) {
             refreshButton.image = refresh.withSymbolConfiguration(
@@ -1746,7 +1751,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             let compactSpacing = grid.tileRects(forTileAt: 1).0.midX - grid.tileRects(forTileAt: 0).0.midX
             grid.frame.size.width = 2560
             let expandedSpacing = grid.tileRects(forTileAt: 1).0.midX - grid.tileRects(forTileAt: 0).0.midX
-            guard (3...8).contains(nameGap), compactSpacing < standardSpacing,
+            guard firstIcon.width <= 92, firstIcon.width >= 80,
+                  (3...8).contains(nameGap), compactSpacing < standardSpacing,
                   standardSpacing < expandedSpacing else {
                 fatalError("Icon labels or adaptive spacing are incorrect")
             }
