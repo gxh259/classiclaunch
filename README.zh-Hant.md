@@ -2,7 +2,23 @@
 
 [简体中文](README.md) · **繁體中文** · [English](README.en.md)
 
-以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.40**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。建議下載 DMG，掛載後可使用自動安裝程式。最低部署目標為 macOS 15.0；目前已在 macOS 27.0 / Apple M1 上驗證原生執行，使用者另在 macOS 15.3 / Apple M4 及 macOS 26.5 / Apple M4 上驗證可執行。x86_64 自我測試已透過 Rosetta 驗證，尚未在 Intel 實機上驗證執行。
+以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.40**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。建議下載 DMG，掛載後可使用自動安裝程式。最低部署目標為 macOS 15.0。各系統的實際執行情況見下文。
+
+## 相容性回報
+
+| 裝置與系統 | 已知情況 |
+| --- | --- |
+| Apple M1 / macOS 27.0 | v0.40 已在本機驗證執行。 |
+| Apple M4 / macOS 15.3 | 使用者回報可執行；具體應用程式版本尚待確認。 |
+| Apple M4 / macOS 26.5 | 使用者回報 v0.34 可執行；換成 v0.40 後，Finder 顯示「應用程式『启动台』無法打開」。原因調查中。 |
+| Intel | x86_64 自我測試已透過 Rosetta 驗證；尚未在 Intel 實機上驗證執行。 |
+
+若 v0.40 無法開啟，可先改用[已知可在 M4 / macOS 26.5 執行的 v0.34](https://github.com/gxh259/classiclaunch/releases/tag/v0.34)。排查時請保留個人應用程式資料，並在出現故障的電腦上於終端機執行以下兩個指令，記錄完整輸出；第一個檢查安裝包簽章，第二個可顯示程式啟動時的具體錯誤：
+
+```bash
+codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
+/Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
+```
 
 安裝包中的檔案名稱仍為簡體中文，例如 `启动台.app`；以下指令及路徑保留實際名稱，可直接複製使用。
 

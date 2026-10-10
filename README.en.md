@@ -2,7 +2,23 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.40**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1. Users have also verified that it runs on macOS 15.3 / Apple M4 and macOS 26.5 / Apple M4. x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.40**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+
+## Compatibility reports
+
+| Device and system | Known result |
+| --- | --- |
+| Apple M1 / macOS 27.0 | v0.40 has been run locally. |
+| Apple M4 / macOS 15.3 | A user reports that the app runs; the exact app version is unconfirmed. |
+| Apple M4 / macOS 26.5 | A user reports that v0.34 runs, but Finder says it cannot open v0.40 after replacement. The cause is under investigation. |
+| Intel | x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified. |
+
+If v0.40 will not open, you can temporarily use [v0.34, reported to run on M4 / macOS 26.5](https://github.com/gxh259/classiclaunch/releases/tag/v0.34). Preserve your personal app data while troubleshooting. On the affected Mac, run these two Terminal commands and save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
+
+```bash
+codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
+/Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
+```
 
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 
