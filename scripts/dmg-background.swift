@@ -61,6 +61,9 @@ for scale in [1, 2] {
     text("拖入 Applications 后，再从应用程序打开 / Open from Applications after copying",
          in: NSRect(x: 24, y: 306, width: 672, height: 25),
          size: 12, color: secondary, centered: true)
+    text("升级前请先退出旧版，等待替换完成后再打开 / Quit before replacing; open after copying",
+         in: NSRect(x: 24, y: 332, width: 672, height: 18),
+         size: 11, color: secondary, centered: true)
     // Installation help stays in the window, using a settings illustration
     // with the app's own name rather than an unrelated third-party app alert.
     let red = NSColor(calibratedRed: 0.78, green: 0.17, blue: 0.16, alpha: 1)

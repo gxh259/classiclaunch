@@ -767,6 +767,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private var cornerEnteredAt: Date?
     private var cornerArmed = true
     private var scanFeedbackTimer: Timer?
+    fileprivate var pendingShow = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         if offerInstallationIfNeeded() { return }
@@ -881,7 +882,10 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                              userInfo: nil, repeats: true)
         NotificationCenter.default.addObserver(self, selector: #selector(systemLocaleDidChange(_:)),
                                                name: NSLocale.currentLocaleDidChangeNotification, object: nil)
-        if !launchedAtLogin { show() }
+        if !launchedAtLogin || pendingShow {
+            pendingShow = false
+            show()
+        }
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self else { return event }
             if NSApp.modalWindow != nil { return event }
@@ -1086,7 +1090,11 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         updatePageIndicator()
     }
 
-    private func show() {
+    fileprivate func show() {
+        guard window != nil, grid != nil, search != nil, model != nil else {
+            pendingShow = true
+            return
+        }
         closeSettingsPanel()
         grid.resetPointerGestures()
         if let screen = preferredScreen() { updateScreenGeometry(for: screen) }
@@ -1820,6 +1828,15 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
                 : "Dock database unavailable")
             for app in entries.prefix(5) { print("\(app.name): \(app.url.path)") }
             exit(entries.isEmpty ? 1 : 0)
+        }
+        if CommandLine.arguments.contains("--self-test-reopen") {
+            let controller = LauncherController()
+            controller.show()
+            guard controller.pendingShow else {
+                fatalError("Early reopen should wait until launcher setup completes")
+            }
+            print("Early reopen self-test passed")
+            return
         }
         if CommandLine.arguments.contains("--self-test-grid-layout") {
             guard GridLayout.presets.map(\.rawValue) == ["5×7", "6×8", "7×8", "7×9"],
