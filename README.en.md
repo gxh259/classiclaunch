@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.40**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.41**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Double-clicking Launchpad in the recommended DMG starts installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
 
 ## Compatibility reports
 
@@ -10,7 +10,7 @@ A macOS application launcher built with Swift and AppKit. It offers a full-scree
 | --- | --- |
 | Apple M1 / macOS 27.0 | v0.40 has been run locally. |
 | Apple M4 / macOS 15.3 | A user reports that the app runs; the exact app version is unconfirmed. |
-| Apple M4 / macOS 26.5 | A user reports that v0.34 runs, but Finder says it cannot open v0.40 after replacement. The cause is under investigation. |
+| Apple M4 / macOS 26.5 | A user reports that v0.34 runs, but Finder says it cannot open v0.40 after replacement. The cause is under investigation; v0.41 has not yet been verified on this Mac. |
 | Intel | x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified. |
 
 If v0.40 will not open, you can temporarily use [v0.34, reported to run on M4 / macOS 26.5](https://github.com/gxh259/classiclaunch/releases/tag/v0.34). Preserve your personal app data while troubleshooting. On the affected Mac, run these two Terminal commands and save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
@@ -31,7 +31,7 @@ The files in the installation package retain their Simplified Chinese names, inc
 - Settings provide Light, Dark, and Follow System themes, Launch at Login, and the option to show or hide the menu bar icon. The interface can follow the system language or use Simplified Chinese, Traditional Chinese, or English.
 - Click the background outside the grid or press Escape to close the launcher. Context menus let you open, rename, hide, or reveal apps in Finder. Third-party apps can also be moved to the Trash when permissions allow.
 - The Light theme uses a transparent window with system frosted glass to show the desktop underneath, including dynamic wallpapers. The Dark theme blurs the desktop wallpaper inside the window. The background is separate from the icon page animation, and the window adapts to display size changes.
-- **Completely Uninstall Launchpad…** removes the app, login item, and local settings. The installation package also includes a tool to clean up data left by older versions.
+- **Completely Uninstall Launchpad…** removes the app, login item, and local settings.
 - A colorful nine-square app icon, with regenerated `.icns` resources to fix malformed small icons that may appear in Finder's Applications list.
 
 ## Build
@@ -43,15 +43,15 @@ chmod +x build.sh
 ./build.sh
 ```
 
-The script compiles arm64 and x86_64 separately, merges them into a universal app and installer, and generates `启动台.app`, `安装启动台.app`, `启动台-通用版.dmg`, and a fallback `启动台-通用版.zip` in `dist/`. On the first build, it creates a Python virtual environment in `.build/dmg-tools` and installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) and pinned packaging dependencies. This requires network access; later builds can reuse the environment. If your default `python3` is too old, select an interpreter with `PYTHON_BIN=/path/to/python3 ./build.sh`. The DMG includes a custom background, fixed icon positions, and an Applications shortcut. The script builds against the local macOS SDK and applies an ad hoc signature to the merged app. The build is not notarized by Apple.
+The script compiles arm64 and x86_64 separately, merges them into a universal app, and generates `启动台.app`, `启动台-通用版.dmg`, and a fallback `启动台-通用版.zip` in `dist/`. On the first build, it creates a Python virtual environment in `.build/dmg-tools` and installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) and pinned packaging dependencies. This requires network access; later builds can reuse the environment. If your default `python3` is too old, select an interpreter with `PYTHON_BIN=/path/to/python3 ./build.sh`. The DMG includes a custom background, fixed icon positions, and an Applications shortcut. The script builds against the local macOS SDK and applies an ad hoc signature to the app. The build is not notarized by Apple.
 
 ## Installation and Usage
 
 ### Automatic installation and updates
 
-Download the universal **DMG** from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases), mount it, and double-click **`安装启动台.app`** on the left. If an older version is installed, the installer asks it to quit, waits for it to exit, and replaces `/Applications/启动台.app`. Your icon layout, folders, and settings are kept. You can open the new version from the installer when it finishes, then eject the disk image. The lower part of the DMG window retains the Privacy & Security → Open Anyway illustration.
+Download the universal **DMG** from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases), mount it, and double-click its single **`启动台.app`**. If Launchpad is not installed, the app copies itself to `/Applications/启动台.app` and opens the installed version automatically. If an older version exists, it prompts for an update, quits the old version after confirmation, replaces the app, and opens the new version. Your icon layout, folders, and settings are kept. Eject the disk image afterward. The lower part of the DMG window retains the Privacy & Security → Open Anyway illustration.
 
-You can still drag the middle `启动台.app` to Applications manually. **Finder's Replace dialog cannot quit a running app automatically**; use the installer for upgrades. The fallback ZIP also includes `安装启动台.app`. If the installer lacks permission to write to `/Applications`, it keeps the old version and reports the error; quit the old version before using Finder's drag-to-install flow.
+You can also drag `启动台.app` to Applications and then open it there. If it is already in Applications on first launch, it runs normally. **Finder drag and Replace only copy files; they cannot execute installation code before copying.** If double-clicking the new app in the DMG only activates a running old version, quit the old version, then double-click the new one and follow the update prompt. Also quit the old version before updating by dragging. The fallback ZIP likewise contains only `启动台.app`. If the app cannot write to `/Applications`, it keeps the old version and reports the error.
 
 ### Homebrew installation
 
@@ -108,7 +108,7 @@ Moving `启动台.app` to the Trash in Finder does not automatically delete user
 
 To remove settings as well, open the installed app, click the gear beside the search field, and select **Completely Uninstall Launchpad…** at the bottom of Settings. After confirmation, the app removes the login item, moves itself to the Trash, and deletes its app data, preferences, caches, and saved window state.
 
-If an older version has already been removed from Applications, double-click to mount the new DMG (or extract the fallback ZIP), then double-click **`清理旧版残留.command`**. Follow the prompts to confirm cleanup. The tool only deletes Launchpad's own user data. If an old entry remains in **System Settings > General > Login Items**, remove it in System Settings. To reinstall or upgrade, simply replace the app; you do not need to run the cleanup tool.
+The installation packages no longer include the leftover cleanup script. If an older app has already been removed from Applications, you can reinstall it and then use **Completely Uninstall Launchpad…** in Settings. The repository still provides a separate [`清理旧版残留.command`](清理旧版残留.command) for manual use if needed. If an old entry remains in **System Settings > General > Login Items**, remove it in System Settings.
 
 ## Implementation Notes
 

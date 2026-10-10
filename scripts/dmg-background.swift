@@ -42,26 +42,26 @@ for scale in [1, 2] {
     text("ClassicLaunchpad · Apple silicon & Intel", in: NSRect(x: 36, y: 76, width: 648, height: 24),
          size: 13, color: secondary)
 
-    // Manual drag arrow; the updater, app, and Applications are real Finder icons.
+    // The app and Applications shortcut are real Finder icons.
     let arrow = NSBezierPath()
-    arrow.move(to: NSPoint(x: 462, y: 190))
-    arrow.line(to: NSPoint(x: 512, y: 190))
-    arrow.move(to: NSPoint(x: 497, y: 175))
-    arrow.line(to: NSPoint(x: 512, y: 190))
-    arrow.line(to: NSPoint(x: 497, y: 205))
+    arrow.move(to: NSPoint(x: 320, y: 190))
+    arrow.line(to: NSPoint(x: 400, y: 190))
+    arrow.move(to: NSPoint(x: 385, y: 175))
+    arrow.line(to: NSPoint(x: 400, y: 190))
+    arrow.line(to: NSPoint(x: 385, y: 205))
     arrow.lineWidth = 5
     arrow.lineCapStyle = .round
     arrow.lineJoinStyle = .round
     NSColor(calibratedRed: 0.18, green: 0.48, blue: 0.90, alpha: 1).setStroke()
     arrow.stroke()
 
-    text("双击左侧“安装启动台”自动安装或更新",
+    text("双击“启动台”：首次自动安装，升级按提示进行",
          in: NSRect(x: 36, y: 270, width: 648, height: 30),
          size: 18, weight: .medium, color: ink, centered: true)
-    text("Double-click Install Launchpad to quit the old version and replace it",
+    text("Double-click Launchpad to install or update",
          in: NSRect(x: 24, y: 306, width: 672, height: 25),
          size: 12, color: secondary, centered: true)
-    text("手动安装：将中间的“启动台”拖到右侧 Applications；更新请使用左侧安装器",
+    text("也可拖入 Applications 后打开；拖拽复制时不会自动运行安装流程",
          in: NSRect(x: 24, y: 332, width: 672, height: 18),
          size: 11, color: secondary, centered: true)
     // Installation help stays in the window, using a settings illustration

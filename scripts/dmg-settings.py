@@ -6,10 +6,8 @@ package = root / "dist" / "启动台安装包"
 format = "UDZO"
 filesystem = "HFS+"
 files = [
-    str(package / "安装启动台.app"),
     str(package / "启动台.app"),
     str(package / "安装说明.txt"),
-    str(package / "清理旧版残留.command"),
 ]
 symlinks = {"Applications": "/Applications"}
 icon = str(root / ".build" / "AppIcon.icns")
@@ -32,11 +30,9 @@ text_size = 13
 icon_size = 80
 # Keep FinderInfo attributes off the signed app bundle. Finder normally hides
 # .app extensions itself; changing them with SetFile breaks strict verification.
-hide_extensions = ["安装说明.txt", "清理旧版残留.command"]
+hide_extensions = ["安装说明.txt"]
 icon_locations = {
-    "安装启动台.app": (130, 190),
-    "启动台.app": (360, 190),
-    "Applications": (590, 190),
-    "安装说明.txt": (240, 667),
-    "清理旧版残留.command": (480, 667),
+    "启动台.app": (225, 190),
+    "Applications": (495, 190),
+    "安装说明.txt": (360, 667),
 }

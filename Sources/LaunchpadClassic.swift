@@ -787,6 +787,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private var cornerEnteredAt: Date?
     private var cornerArmed = true
     private var scanFeedbackTimer: Timer?
+    private var installationPanel: NSPanel?
     fileprivate var pendingShow = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -929,38 +930,77 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
     private func offerInstallationIfNeeded() -> Bool {
         let appURL = Bundle.main.bundleURL.standardizedFileURL
+        let installedURL = URL(fileURLWithPath: "/Applications/启动台.app", isDirectory: true)
         guard appURL.pathExtension.lowercased() == "app",
-              appURL.deletingLastPathComponent().path != "/Applications" else { return false }
-        let alert = NSAlert()
-        alert.messageText = L("安装启动台")
-        let installerURL = appURL.deletingLastPathComponent()
-            .appendingPathComponent("安装启动台.app", isDirectory: true)
-        let hasInstaller = FileManager.default.fileExists(atPath: installerURL.path)
-        let hasShortcut = ["Applications", "应用程序"].contains { name in
-            FileManager.default.fileExists(atPath:
-                appURL.deletingLastPathComponent().appendingPathComponent(name).path)
+              appURL.resolvingSymlinksInPath().path != installedURL.resolvingSymlinksInPath().path else {
+            return false
         }
-        alert.informativeText = hasInstaller
-            ? L("请运行旁边的“安装启动台.app”，它会自动退出旧版并安装新版。")
-            : hasShortcut
-                ? L("请将“启动台.app”拖到旁边的应用程序文件夹快捷方式。安装完成后，从“应用程序”打开启动台。")
-                : L("请在访达中将“启动台.app”拖到“应用程序”（/Applications）。安装完成后，从“应用程序”打开启动台。")
-        alert.addButton(withTitle: hasInstaller ? L("打开安装器") : L("在访达中显示"))
+        let updating = FileManager.default.fileExists(atPath: installedURL.path)
+        if !updating {
+            installAndOpen(from: appURL, updating: false)
+            return true
+        }
+        let alert = NSAlert()
+        alert.messageText = L("更新启动台")
+        alert.informativeText = L("将先退出正在运行的旧版启动台，再替换“应用程序”中的应用。图标排序和设置会保留。")
+        alert.addButton(withTitle: L("退出旧版并更新"))
         alert.addButton(withTitle: L("暂时运行"))
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {
-            if hasInstaller {
-                NSWorkspace.shared.openApplication(at: installerURL,
-                    configuration: NSWorkspace.OpenConfiguration()) { _, error in
-                    if let error { NSLog("Could not open installer: %@", error.localizedDescription) }
-                }
-            } else {
-                NSWorkspace.shared.activateFileViewerSelecting([appURL])
-            }
-            DispatchQueue.main.async { NSApp.terminate(nil) }
+            installAndOpen(from: appURL, updating: true)
             return true
         }
         return false
+    }
+
+    private func installAndOpen(from sourceURL: URL, updating: Bool) {
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 360, height: 112),
+                            styleMask: [.titled], backing: .buffered, defer: false)
+        panel.title = L("安装启动台")
+        panel.center()
+        panel.isReleasedWhenClosed = false
+        let spinner = NSProgressIndicator(frame: NSRect(x: 28, y: 39, width: 30, height: 30))
+        spinner.style = .spinning
+        spinner.startAnimation(nil)
+        let label = NSTextField(labelWithString: L(updating
+            ? "正在退出旧版并更新启动台…" : "正在安装启动台…"))
+        label.frame = NSRect(x: 72, y: 41, width: 270, height: 25)
+        panel.contentView?.addSubview(spinner)
+        panel.contentView?.addSubview(label)
+        panel.makeKeyAndOrderFront(nil)
+        installationPanel = panel
+
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let result = Result { try AppInstaller().install(from: sourceURL) }
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.installationPanel?.close()
+                self.installationPanel = nil
+                switch result {
+                case .success(let installedURL):
+                    let configuration = NSWorkspace.OpenConfiguration()
+                    configuration.createsNewApplicationInstance = true
+                    NSWorkspace.shared.openApplication(at: installedURL, configuration: configuration) { _, error in
+                        DispatchQueue.main.async {
+                            if let error { self.showInstallationError(error) }
+                            NSApp.terminate(nil)
+                        }
+                    }
+                case .failure(let error):
+                    self.showInstallationError(error)
+                    NSApp.terminate(nil)
+                }
+            }
+        }
+    }
+
+    private func showInstallationError(_ error: Error) {
+        let alert = NSAlert()
+        alert.alertStyle = .warning
+        alert.messageText = L("无法安装启动台")
+        alert.informativeText = error.localizedDescription
+        alert.addButton(withTitle: L("完成"))
+        alert.runModal()
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
@@ -1720,10 +1760,16 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             }
             do {
                 try fixture(source, bundleID: AppInstaller.bundleIdentifier, marker: "new")
-                try fixture(installed, bundleID: AppInstaller.bundleIdentifier, marker: "old")
+                try manager.createDirectory(at: applications, withIntermediateDirectories: true)
                 let installer = AppInstaller(applicationsDirectory: applications)
                 try installer.install(from: source, quitRunning: false)
                 let executable = installed.appendingPathComponent("Contents/MacOS/ClassicLaunchpad")
+                guard String(data: try Data(contentsOf: executable), encoding: .utf8) == "new" else {
+                    fatalError("Installer did not install the app on an empty system")
+                }
+                try manager.removeItem(at: installed)
+                try fixture(installed, bundleID: AppInstaller.bundleIdentifier, marker: "old")
+                try installer.install(from: source, quitRunning: false)
                 guard String(data: try Data(contentsOf: executable), encoding: .utf8) == "new",
                       try manager.contentsOfDirectory(atPath: applications.path) == ["启动台.app"] else {
                     fatalError("Installer did not replace the previous app cleanly")

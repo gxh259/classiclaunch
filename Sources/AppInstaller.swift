@@ -9,7 +9,7 @@ enum AppInstallationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidSource:
-            return NSLocalizedString("安装包中的启动台应用不完整，无法安装。", comment: "")
+            return NSLocalizedString("启动台应用不完整，无法安装。", comment: "")
         case .differentInstalledApp:
             return NSLocalizedString("“应用程序”中的“启动台.app”属于其他软件，未进行替换。", comment: "")
         case .runningVersionCouldNotQuit:
