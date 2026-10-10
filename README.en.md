@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.40**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.40**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1. Users have also verified that it runs on macOS 15.3 / Apple M4 and macOS 26.5 / Apple M4. x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified.
 
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 
