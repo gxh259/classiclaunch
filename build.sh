@@ -41,7 +41,7 @@ build_arch() {
 build_arch arm64
 build_arch x86_64
 
-rm -rf "$APP_DIR" "$DIST_DIR/安装启动台.app" "$PACKAGE_DIR" "$ZIP_PATH" "$DIST_DIR/启动台.zip"
+rm -rf "$APP_DIR" "$DIST_DIR/安装启动台.app" "$PACKAGE_DIR" "$ZIP_PATH" "$DIST_DIR/启动台.zip" "$DIST_DIR/启动台-通用版.dmg"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" "$PACKAGE_DIR"
 lipo -create \
   "$BUILD_DIR/ClassicLaunchpad-arm64" \
@@ -86,3 +86,5 @@ ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "$ZIP_PATH"
 
 printf '已生成：%s（arm64 + x86_64）\n' "$ZIP_PATH"
 bash ./scripts/build-dmg.sh
+VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)"
+python3 ./scripts/archive-releases.py --version "$VERSION"

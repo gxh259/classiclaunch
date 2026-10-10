@@ -44,24 +44,24 @@ for scale in [1, 2] {
 
     // The app and Applications shortcut are real Finder icons.
     let arrow = NSBezierPath()
-    arrow.move(to: NSPoint(x: 320, y: 190))
-    arrow.line(to: NSPoint(x: 400, y: 190))
-    arrow.move(to: NSPoint(x: 385, y: 175))
-    arrow.line(to: NSPoint(x: 400, y: 190))
-    arrow.line(to: NSPoint(x: 385, y: 205))
-    arrow.lineWidth = 5
+    arrow.move(to: NSPoint(x: 322, y: 190))
+    arrow.line(to: NSPoint(x: 397, y: 190))
+    arrow.move(to: NSPoint(x: 378, y: 172))
+    arrow.line(to: NSPoint(x: 397, y: 190))
+    arrow.line(to: NSPoint(x: 378, y: 208))
+    arrow.lineWidth = 7
     arrow.lineCapStyle = .round
     arrow.lineJoinStyle = .round
     NSColor(calibratedRed: 0.18, green: 0.48, blue: 0.90, alpha: 1).setStroke()
     arrow.stroke()
 
-    text("双击“启动台”：首次自动安装，升级按提示进行",
+    text("将“启动台”拖到 Applications 安装",
          in: NSRect(x: 36, y: 270, width: 648, height: 30),
          size: 18, weight: .medium, color: ink, centered: true)
-    text("Double-click Launchpad to install or update",
+    text("Drag Launchpad to Applications to install",
          in: NSRect(x: 24, y: 306, width: 672, height: 25),
          size: 12, color: secondary, centered: true)
-    text("也可拖入 Applications 后打开；拖拽复制时不会自动运行安装流程",
+    text("也可双击左侧“启动台”自动安装或更新；若只唤醒旧版，请先退出旧版",
          in: NSRect(x: 24, y: 332, width: 672, height: 18),
          size: 11, color: secondary, centered: true)
     // Installation help stays in the window, using a settings illustration

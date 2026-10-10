@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.42**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Double-clicking Launchpad in the recommended DMG starts installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.43**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
 
 ## Compatibility reports
 
@@ -10,7 +10,7 @@ A macOS application launcher built with Swift and AppKit. It offers a full-scree
 | --- | --- |
 | Apple M1 / macOS 27.0 | v0.40 has been run locally. |
 | Apple M4 / macOS 15.3 | A user reports that the app runs; the exact app version is unconfirmed. |
-| Apple M4 / macOS 26.5 | A user reports that v0.34 runs, but Finder says it cannot open v0.40 after replacement. The cause is under investigation; v0.41–v0.42 have not yet been verified on this Mac. |
+| Apple M4 / macOS 26.5 | A user reports that v0.34 runs, but Finder says it cannot open v0.40 after replacement. The cause is under investigation; v0.41–v0.43 have not yet been verified on this Mac. |
 | Intel | x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified. |
 
 If v0.40 will not open, you can temporarily use [v0.34, reported to run on M4 / macOS 26.5](https://github.com/gxh259/classiclaunch/releases/tag/v0.34). Preserve your personal app data while troubleshooting. On the affected Mac, run these two Terminal commands and save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
@@ -47,7 +47,7 @@ chmod +x build.sh
 ./build.sh
 ```
 
-The script compiles arm64 and x86_64 separately, merges them into a universal app, and generates `启动台.app`, `启动台-通用版.dmg`, and a fallback `启动台-通用版.zip` in `dist/`. On the first build, it creates a Python virtual environment in `.build/dmg-tools` and installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) and pinned packaging dependencies. This requires network access; later builds can reuse the environment. If your default `python3` is too old, select an interpreter with `PYTHON_BIN=/path/to/python3 ./build.sh`. The DMG includes a custom background, fixed icon positions, and an Applications shortcut. The script builds against the local macOS SDK and applies an ad hoc signature to the app. The build is not notarized by Apple.
+The script compiles arm64 and x86_64 separately and merges them into a universal app. `dist/` contains `启动台.app` and links to the current DMG and ZIP. Complete packages are stored in `releases/` at the project root; after each successful build, only the newest two versions of the DMG and ZIP are retained there. On the first build, it creates a Python virtual environment in `.build/dmg-tools` and installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) and pinned packaging dependencies. This requires network access; later builds can reuse the environment. If your default `python3` is too old, select an interpreter with `PYTHON_BIN=/path/to/python3 ./build.sh`. The DMG includes a custom background, fixed icon positions, and an Applications shortcut. The script builds against the local macOS SDK and applies an ad hoc signature to the app. The build is not notarized by Apple.
 
 ## Installation and Usage
 

@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · **繁體中文** · [English](README.en.md)
 
-以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.42**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。建議下載 DMG，按兩下其中的啟動台即可安裝或更新。最低部署目標為 macOS 15.0。各系統的實際執行情況見下文。
+以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.43**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。建議下載 DMG，將其中的啟動台拖入 Applications 安裝，也可按兩下應用程式自動安裝或更新。最低部署目標為 macOS 15.0。各系統的實際執行情況見下文。
 
 ## 相容性回報
 
@@ -10,7 +10,7 @@
 | --- | --- |
 | Apple M1 / macOS 27.0 | v0.40 已在本機驗證執行。 |
 | Apple M4 / macOS 15.3 | 使用者回報可執行；具體應用程式版本尚待確認。 |
-| Apple M4 / macOS 26.5 | 使用者回報 v0.34 可執行；換成 v0.40 後，Finder 顯示「應用程式『启动台』無法打開」。原因調查中，v0.41–v0.42 尚未在這台電腦驗證。 |
+| Apple M4 / macOS 26.5 | 使用者回報 v0.34 可執行；換成 v0.40 後，Finder 顯示「應用程式『启动台』無法打開」。原因調查中，v0.41–v0.43 尚未在這台電腦驗證。 |
 | Intel | x86_64 自我測試已透過 Rosetta 驗證；尚未在 Intel 實機上驗證執行。 |
 
 若 v0.40 無法開啟，可先改用[已知可在 M4 / macOS 26.5 執行的 v0.34](https://github.com/gxh259/classiclaunch/releases/tag/v0.34)。排查時請保留個人應用程式資料，並在出現故障的電腦上於終端機執行以下兩個指令，記錄完整輸出；第一個檢查安裝包簽章，第二個可顯示程式啟動時的具體錯誤：
@@ -47,7 +47,7 @@ chmod +x build.sh
 ./build.sh
 ```
 
-腳本分別編譯 arm64 和 x86_64，再合併為通用應用程式，於 `dist/` 產生 `启动台.app`、`启动台-通用版.dmg` 及備用的 `启动台-通用版.zip`。首次建置會在 `.build/dmg-tools` 建立 Python 虛擬環境，並安裝 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包相依套件，需要連線至網路；之後可重複使用。若 `python3` 版本較舊，可使用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定直譯器。DMG 使用自訂背景、固定圖示位置及 Applications 捷徑。腳本使用本機 macOS SDK 編譯，並對應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
+腳本分別編譯 arm64 和 x86_64，再合併為通用應用程式。`dist/` 包含 `启动台.app` 和指向目前版本 DMG、ZIP 的連結。完整安裝包保存在專案根目錄的 `releases/`；每次成功建置後僅保留最新兩個版本的 DMG 和 ZIP。首次建置會在 `.build/dmg-tools` 建立 Python 虛擬環境，並安裝 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包相依套件，需要連線至網路；之後可重複使用。若 `python3` 版本較舊，可使用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定直譯器。DMG 使用自訂背景、固定圖示位置及 Applications 捷徑。腳本使用本機 macOS SDK 編譯，並對應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
 
 ## 安裝與使用
 

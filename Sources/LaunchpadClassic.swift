@@ -524,8 +524,12 @@ final class GridView: NSView {
         let availableHeight = max(1, bounds.height - topInset - bottomInset)
         let cellH = min(205, availableHeight / CGFloat(rows))
         let gridHeight = CGFloat(rows) * cellH
+        // Tall external displays leave unused space below the capped row height.
+        // Share part of that space above the icons; compact MacBook displays have
+        // no surplus, so their existing alignment is preserved.
+        let verticalShift = min(80, max(0, availableHeight - gridHeight) * 0.35)
         return (NSRect(x: (bounds.width - CGFloat(columns) * cellW) / 2,
-                       y: bounds.height - topInset - gridHeight,
+                       y: bounds.height - topInset - gridHeight - verticalShift,
                        width: CGFloat(columns) * cellW,
                        height: gridHeight), cellW, cellH)
     }
@@ -1938,11 +1942,15 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             let (internalIcon, internalName) = internalGrid.tileRects(forTileAt: 0)
             let (externalIcon, externalName) = externalGrid.tileRects(forTileAt: 0)
             let secondRow = externalGrid.tileRects(forTileAt: 7).0
+            // The external grid should sit lower without moving the MacBook grid.
+            let externalWithoutShift = externalGrid.bounds.height - 125
+            let externalTopGap = externalWithoutShift - externalIcon.maxY
             guard (90...94).contains(internalIcon.width), externalIcon.width >= 125,
                   externalIcon.width > internalIcon.width,
                   externalName.height > internalName.height,
                   externalIcon.minY - externalName.maxY <= 8,
-                  externalIcon.midY - secondRow.midY <= 205 else {
+                  externalIcon.midY - secondRow.midY <= 205,
+                  externalTopGap > 35, externalTopGap < 110 else {
                 fatalError("Grid icons, names, or rows did not adapt to the external display")
             }
             print("Responsive layout self-test passed")
