@@ -27,6 +27,24 @@ enum LauncherIcon {
     }
 }
 
+enum LauncherHeaderLayout {
+    static func frames(in size: NSSize, searchHeight: CGFloat) -> (NSRect, NSRect, NSRect) {
+        let buttonWidth: CGFloat = 36
+        let buttonHeight: CGFloat = 32
+        let searchWidth = min(360, max(180, size.width - 120))
+        let totalWidth = searchWidth + 10 + buttonWidth + 6 + buttonWidth
+        let x = (size.width - totalWidth) / 2
+        let search = NSRect(x: x, y: size.height - 70 - searchHeight,
+                            width: searchWidth, height: searchHeight)
+        let buttonY = search.midY - buttonHeight / 2
+        let settings = NSRect(x: search.maxX + 10, y: buttonY,
+                              width: buttonWidth, height: buttonHeight)
+        let refresh = NSRect(x: settings.maxX + 6, y: buttonY,
+                             width: buttonWidth, height: buttonHeight)
+        return (search, settings, refresh)
+    }
+}
+
 enum GridLayout: Equatable {
     case fiveBySeven, sixByEight, sevenByEight, sevenByNine
     case custom(rows: Int, columns: Int)
@@ -504,10 +522,10 @@ final class GridView: NSView {
         let topInset: CGFloat = 125
         let bottomInset = pageIndicatorY + 42
         let availableHeight = max(1, bounds.height - topInset - bottomInset)
-        let cellH = min(235, availableHeight / CGFloat(rows))
+        let cellH = min(205, availableHeight / CGFloat(rows))
         let gridHeight = CGFloat(rows) * cellH
         return (NSRect(x: (bounds.width - CGFloat(columns) * cellW) / 2,
-                       y: bottomInset + (availableHeight - gridHeight) / 2,
+                       y: bounds.height - topInset - gridHeight,
                        width: CGFloat(columns) * cellW,
                        height: gridHeight), cellW, cellH)
     }
@@ -544,9 +562,10 @@ final class GridView: NSView {
     }
 
     private func tileFrames(x: CGFloat, y: CGFloat, cellW: CGFloat, cellH: CGFloat) -> (NSRect, NSRect) {
-        let labelHeight = min(24, max(12, cellH * 0.24))
+        let labelHeight = min(30, max(20, cellH * 0.17))
         let gap = min(8, max(3, cellH * 0.04))
-        let iconSize = max(8, min(92, cellW - 12, cellH - labelHeight - gap - 2))
+        let preferredIconSize = folderMode ? 92 : min(132, max(92, cellH * 0.64))
+        let iconSize = max(8, min(preferredIconSize, cellW - 12, cellH - labelHeight - gap - 2))
         let groupBottom = y + max(0, (cellH - labelHeight - gap - iconSize) / 2)
         let icon = NSRect(x: x + (cellW - iconSize) / 2,
                           y: groupBottom + labelHeight + gap,
@@ -574,6 +593,7 @@ final class GridView: NSView {
         }
         let start = page * pageSize
         let end = min(start + pageSize, tiles.count)
+        let titleSize = folderMode ? 14 : min(18, max(14, cellH * 0.085))
         if start < end {
             for index in start..<end {
                 let local = index - start
@@ -600,7 +620,7 @@ final class GridView: NSView {
                 paragraph.alignment = .center
                 paragraph.lineBreakMode = .byTruncatingTail
                 (tile.title as NSString).draw(in: titleRect, withAttributes: [
-                    .font: NSFont.systemFont(ofSize: min(14, max(9, cellH * 0.23)), weight: .medium),
+                    .font: NSFont.systemFont(ofSize: titleSize, weight: .medium),
                     .foregroundColor: labelColor,
                     .shadow: folderMode && !isDark ? NSShadow() : titleShadow,
                     .paragraphStyle: paragraph
@@ -830,17 +850,11 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         grid.onPageChanged = { [weak self] in self?.updatePageIndicator() }
         search = NSSearchField(frame: .zero)
         search.controlSize = .large
-        let searchHeight = search.intrinsicContentSize.height
-        search.frame = NSRect(x: (frame.width - 360) / 2,
-                              y: frame.height - 70 - searchHeight,
-                              width: 360, height: searchHeight)
         search.focusRingType = .none
         search.placeholderString = L("搜索应用")
         search.delegate = self
-        search.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
         backdrop.addSubview(search)
-        settingsButton = NSButton(frame: NSRect(x: search.frame.maxX + 10,
-                                                y: search.frame.midY - 16, width: 36, height: 32))
+        settingsButton = NSButton(frame: .zero)
         settingsButton.bezelStyle = .regularSquare
         if let gear = NSImage(systemSymbolName: "gearshape", accessibilityDescription: L("设置")) {
             settingsButton.image = gear.withSymbolConfiguration(
@@ -852,10 +866,8 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         settingsButton.toolTip = L("设置")
         settingsButton.target = self
         settingsButton.action = #selector(showSettings(_:))
-        settingsButton.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
         backdrop.addSubview(settingsButton)
-        refreshButton = NSButton(frame: NSRect(x: settingsButton.frame.maxX + 6,
-                                               y: search.frame.midY - 16, width: 36, height: 32))
+        refreshButton = NSButton(frame: .zero)
         refreshButton.bezelStyle = .regularSquare
         if let refresh = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: L("重新扫描应用")) {
             refreshButton.image = refresh.withSymbolConfiguration(
@@ -867,7 +879,6 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         refreshButton.toolTip = L("重新扫描应用")
         refreshButton.target = self
         refreshButton.action = #selector(rescan(_:))
-        refreshButton.autoresizingMask = [.minXMargin, .maxXMargin, .minYMargin]
         backdrop.addSubview(refreshButton)
         updateScreenGeometry(for: screen)
         applyTheme()
@@ -1098,6 +1109,11 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         if window.frame != screen.frame {
             window.setFrame(screen.frame, display: window.isVisible)
         }
+        let header = LauncherHeaderLayout.frames(in: window.contentView?.bounds.size ?? screen.frame.size,
+                                                 searchHeight: search.intrinsicContentSize.height)
+        search.frame = header.0
+        settingsButton.frame = header.1
+        refreshButton.frame = header.2
         grid.dockBottomInset = max(0, screen.visibleFrame.minY - screen.frame.minY)
         let imageURL = NSWorkspace.shared.desktopImageURL(for: screen)
         if imageURL != wallpaperURL {
@@ -1817,12 +1833,40 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             let compactSpacing = grid.tileRects(forTileAt: 1).0.midX - grid.tileRects(forTileAt: 0).0.midX
             grid.frame.size.width = 2560
             let expandedSpacing = grid.tileRects(forTileAt: 1).0.midX - grid.tileRects(forTileAt: 0).0.midX
-            guard firstIcon.width <= 92, firstIcon.width >= 80,
+            guard firstIcon.width <= 132, firstIcon.width >= 90,
                   (3...8).contains(nameGap), compactSpacing < standardSpacing,
                   standardSpacing < expandedSpacing else {
                 fatalError("Icon labels or adaptive spacing are incorrect")
             }
             print("Page gesture self-test passed")
+            return
+        }
+        if CommandLine.arguments.contains("--self-test-responsive-layout") {
+            for size in [NSSize(width: 1465, height: 927), NSSize(width: 2560, height: 1440)] {
+                let (search, settings, refresh) = LauncherHeaderLayout.frames(in: size, searchHeight: 28)
+                guard search.minX >= 0, search.maxX < settings.minX,
+                      settings.maxX < refresh.minX, refresh.maxX <= size.width,
+                      abs(search.midY - settings.midY) < 0.01,
+                      abs(search.midY - refresh.midY) < 0.01,
+                      abs((search.minX + refresh.maxX) / 2 - size.width / 2) < 0.01 else {
+                    fatalError("Search and header buttons overlap or are not centered on \(size)")
+                }
+            }
+            let internalGrid = GridView(frame: NSRect(x: 0, y: 0, width: 1465, height: 927))
+            let externalGrid = GridView(frame: NSRect(x: 0, y: 0, width: 2560, height: 1440))
+            internalGrid.dockBottomInset = 75
+            externalGrid.dockBottomInset = 75
+            let (internalIcon, internalName) = internalGrid.tileRects(forTileAt: 0)
+            let (externalIcon, externalName) = externalGrid.tileRects(forTileAt: 0)
+            let secondRow = externalGrid.tileRects(forTileAt: 7).0
+            guard (90...94).contains(internalIcon.width), externalIcon.width >= 125,
+                  externalIcon.width > internalIcon.width,
+                  externalName.height > internalName.height,
+                  externalIcon.minY - externalName.maxY <= 8,
+                  externalIcon.midY - secondRow.midY <= 205 else {
+                fatalError("Grid icons, names, or rows did not adapt to the external display")
+            }
+            print("Responsive layout self-test passed")
             return
         }
         if CommandLine.arguments.contains("--self-test-language") {

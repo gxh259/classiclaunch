@@ -4,8 +4,8 @@
   <key>CFBundleName</key><string>启动台</string>
   <key>CFBundleDisplayName</key><string>启动台</string>
   <key>CFBundleIdentifier</key><string>local.codex.classiclaunchpad</string>
-  <key>CFBundleVersion</key><string>39</string>
-  <key>CFBundleShortVersionString</key><string>0.39</string>
+  <key>CFBundleVersion</key><string>40</string>
+  <key>CFBundleShortVersionString</key><string>0.40</string>
   <key>CFBundleDevelopmentRegion</key><string>zh-Hans</string>
   <key>CFBundleLocalizations</key><array><string>zh-Hans</string><string>zh-Hant</string><string>en</string></array>
   <key>CFBundleExecutable</key><string>ClassicLaunchpad</string>

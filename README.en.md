@@ -2,13 +2,13 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.39**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.40**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
 
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 
 ## Features
 
-- Full-screen app grid and search, with labels closer to icons and horizontal spacing that adapts to screen size; supports drag-to-reorder, folder creation and renaming, hidden apps, and custom app names.
+- Full-screen app grid and search. Icon size, label size, and row spacing adapt to the available screen area, keeping the built-in display compact and enlarging icons on external displays. The search field and its Settings and Rescan buttons are repositioned together when the display changes. Also supports drag-to-reorder, folder creation and renaming, hidden apps, and custom app names.
 - Choose a 5×7, 6×8, 7×8, or 7×9 grid, or enter a custom layout of 2–12 rows and 3–16 columns in Settings. Existing saved 7×7 layouts remain available as custom layouts. Switch pages by dragging horizontally with the left mouse button, swiping horizontally with three fingers on a trackpad, using the scroll wheel or arrow keys, or clicking the fixed page dots at the bottom.
 - Scan apps from `/Applications`, preferring names that match the system language. Apps in Finder's Utilities folder are grouped into an **Other** folder. Rescan manually or optionally supplement system apps using the Dock Launchpad database.
 - Open from the Dock, menu bar, a recordable global keyboard shortcut, or a hot corner.
