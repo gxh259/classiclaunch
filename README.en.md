@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.38**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended download is a DMG that opens a drag-to-install window. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.39**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. The recommended DMG includes an automatic installer for upgrades. The minimum deployment target is macOS 15.0. Native execution has been verified on macOS 27.0 / Apple M1, and x86_64 self-tests have passed through Rosetta. Execution on a physical Intel Mac has not yet been verified.
 
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 
@@ -27,15 +27,15 @@ chmod +x build.sh
 ./build.sh
 ```
 
-The script compiles arm64 and x86_64 separately, merges them into a universal executable, and generates `启动台.app`, `启动台-通用版.dmg`, and a fallback `启动台-通用版.zip` in `dist/`. On the first build, it creates a Python virtual environment in `.build/dmg-tools` and installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) and pinned packaging dependencies. This requires network access; later builds can reuse the environment. If your default `python3` is too old, select an interpreter with `PYTHON_BIN=/path/to/python3 ./build.sh`. The DMG includes a custom background, fixed icon positions, and an Applications shortcut. The script builds against the local macOS SDK and applies an ad hoc signature to the merged app. The build is not notarized by Apple.
+The script compiles arm64 and x86_64 separately, merges them into a universal app and installer, and generates `启动台.app`, `安装启动台.app`, `启动台-通用版.dmg`, and a fallback `启动台-通用版.zip` in `dist/`. On the first build, it creates a Python virtual environment in `.build/dmg-tools` and installs [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) and pinned packaging dependencies. This requires network access; later builds can reuse the environment. If your default `python3` is too old, select an interpreter with `PYTHON_BIN=/path/to/python3 ./build.sh`. The DMG includes a custom background, fixed icon positions, and an Applications shortcut. The script builds against the local macOS SDK and applies an ad hoc signature to the merged app. The build is not notarized by Apple.
 
 ## Installation and Usage
 
-### Manual installation
+### Automatic installation and updates
 
-Download the universal **DMG** from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases). Double-click to mount it. The window shows Launchpad on the left, an **Applications** folder on the right, and an arrow between them. Drag Launchpad onto the folder, then open it from `/Applications`. After installation, eject the “启动台” disk image from Finder's sidebar. The lower part of the window retains a red warning for apps that cannot be opened and a Privacy & Security → Open Anyway illustration, followed by installation notes and the legacy cleanup tool. The illustration is in Simplified Chinese with English hints.
+Download the universal **DMG** from [GitHub Releases](https://github.com/gxh259/classiclaunch/releases), mount it, and double-click **`安装启动台.app`** on the left. If an older version is installed, the installer asks it to quit, waits for it to exit, and replaces `/Applications/启动台.app`. Your icon layout, folders, and settings are kept. You can open the new version from the installer when it finishes, then eject the disk image. The lower part of the DMG window retains the Privacy & Security → Open Anyway illustration.
 
-To upgrade, quit every running Launchpad instance first (check Activity Monitor), then replace the app and wait for copying to finish. Do not launch it during replacement. If macOS says it cannot open the app, confirm copying has finished, quit any old process, and open `/Applications/启动台.app`. Launch at Login requires the app to be installed in `/Applications`. A fallback ZIP is also available: extract it and drag `启动台.app` onto the shortcut named `应用程序` in the same folder.
+You can still drag the middle `启动台.app` to Applications manually. **Finder's Replace dialog cannot quit a running app automatically**; use the installer for upgrades. The fallback ZIP also includes `安装启动台.app`. If the installer lacks permission to write to `/Applications`, it keeps the old version and reports the error; quit the old version before using Finder's drag-to-install flow.
 
 ### Homebrew installation
 

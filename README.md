@@ -2,7 +2,7 @@
 
 **简体中文** · [繁體中文](README.zh-Hant.md) · [English](README.en.md)
 
-用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.38**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。推荐下载 DMG，双击即可打开拖拽安装窗口。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
+用 Swift 和 AppKit 编写的 macOS 启动台。它提供全屏应用网格、搜索、文件夹、翻页和多种唤出方式，供希望继续使用经典启动台布局的用户使用。当前版本为 **0.39**，构建产物为同时包含 **Apple 芯片（arm64）与 Intel（x86_64）** 的通用应用。推荐下载 DMG，双击挂载后可使用自动安装器。最低部署目标为 macOS 15.0；目前在 macOS 27.0 / Apple M1 上完成了原生运行验证，x86_64 自测已通过 Rosetta 验证，尚未在 Intel 实机上运行验证。
 
 ## 功能
 
@@ -25,15 +25,15 @@ chmod +x build.sh
 ./build.sh
 ```
 
-脚本分别编译 arm64 和 x86_64，然后合并成一个通用二进制，在 `dist/` 中生成 `启动台.app`、`启动台-通用版.dmg` 和备用的 `启动台-通用版.zip`。首次构建会在 `.build/dmg-tools` 创建 Python 虚拟环境并安装 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包依赖，需要联网；后续可复用。若 `python3` 版本较旧，可用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定解释器。DMG 使用自定义背景、固定图标位置和 Applications 快捷方式。脚本使用本机 macOS SDK 编译，并对合并后的应用执行临时签名。这个构建没有经过 Apple 公证。
+脚本分别编译 arm64 和 x86_64，然后分别合并成通用应用和安装器，在 `dist/` 中生成 `启动台.app`、`安装启动台.app`、`启动台-通用版.dmg` 和备用的 `启动台-通用版.zip`。首次构建会在 `.build/dmg-tools` 创建 Python 虚拟环境并安装 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包依赖，需要联网；后续可复用。若 `python3` 版本较旧，可用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定解释器。DMG 使用自定义背景、固定图标位置和 Applications 快捷方式。脚本使用本机 macOS SDK 编译，并对合并后的应用执行临时签名。这个构建没有经过 Apple 公证。
 
 ## 安装与使用
 
-### 手动安装
+### 自动安装与更新
 
-从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 **DMG**。双击挂载后，窗口左侧显示“启动台”，右侧显示 **Applications** 文件夹，中间有拖拽箭头。将启动台拖入右侧文件夹，再从 `/Applications` 打开；安装完成后可在访达侧边栏推出“启动台”磁盘映像。窗口下方保留红色“安装后若提示无法打开”提示，以及“隐私与安全性 → 仍要打开”的操作示意图，并提供安装说明和旧版残留清理工具。
+从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 **DMG**，双击挂载后，再双击左侧的 **「安装启动台.app」**。如果电脑已安装旧版，安装器会先请求旧版退出，等待进程结束后替换 `/Applications/启动台.app`；图标排序、文件夹和设置会保留。完成后可直接从安装器打开新版，再从访达侧边栏推出磁盘映像。DMG 下方仍保留“隐私与安全性 → 仍要打开”的操作示意图。
 
-若已有旧版本，请先完全退出所有正在运行的“启动台”（可在“活动监视器”中确认），再拖动新版并等待复制完成；复制期间不要启动应用。若替换时出现“无法打开”，请确认复制完成、退出残留的旧进程，然后从 `/Applications/启动台.app` 打开。开机自启动需要应用位于 `/Applications`。也提供备用 ZIP：解压后，将“启动台.app”拖到同一文件夹内的“应用程序”快捷方式即可。
+中间的「启动台.app」也可以手动拖到右侧 Applications 文件夹。**访达自带的“替换”对话框不会自动退出正在运行的旧版**；升级时请使用左侧安装器。备用 ZIP 解压后也包含「安装启动台.app」，操作相同。若没有写入 `/Applications` 的权限，安装器会保留旧版并提示错误，此时可先退出旧版再用访达拖拽安装。
 
 ### Homebrew 安装
 

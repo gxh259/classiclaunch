@@ -6,6 +6,7 @@ package = root / "dist" / "启动台安装包"
 format = "UDZO"
 filesystem = "HFS+"
 files = [
+    str(package / "安装启动台.app"),
     str(package / "启动台.app"),
     str(package / "安装说明.txt"),
     str(package / "清理旧版残留.command"),
@@ -33,8 +34,9 @@ icon_size = 80
 # .app extensions itself; changing them with SetFile breaks strict verification.
 hide_extensions = ["安装说明.txt", "清理旧版残留.command"]
 icon_locations = {
-    "启动台.app": (180, 190),
-    "Applications": (540, 190),
+    "安装启动台.app": (130, 190),
+    "启动台.app": (360, 190),
+    "Applications": (590, 190),
     "安装说明.txt": (240, 667),
     "清理旧版残留.command": (480, 667),
 }

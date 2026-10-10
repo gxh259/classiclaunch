@@ -28,8 +28,11 @@ cleanup_mount() {
 trap cleanup_mount EXIT
 hdiutil attach -readonly -nobrowse -noautoopen -quiet -mountpoint "$CHECK_MOUNT" "$DMG_PATH"
 codesign --verify --deep --strict "$CHECK_MOUNT/启动台.app"
+codesign --verify --deep --strict "$CHECK_MOUNT/安装启动台.app"
 lipo -verify_arch arm64 "$CHECK_MOUNT/启动台.app/Contents/MacOS/ClassicLaunchpad"
 lipo -verify_arch x86_64 "$CHECK_MOUNT/启动台.app/Contents/MacOS/ClassicLaunchpad"
+lipo -verify_arch arm64 "$CHECK_MOUNT/安装启动台.app/Contents/MacOS/ClassicLaunchpadInstaller"
+lipo -verify_arch x86_64 "$CHECK_MOUNT/安装启动台.app/Contents/MacOS/ClassicLaunchpadInstaller"
 if [ "$(readlink "$CHECK_MOUNT/Applications")" != "/Applications" ]; then
   printf 'DMG Applications shortcut is invalid\n' >&2
   exit 1

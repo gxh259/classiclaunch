@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · **繁體中文** · [English](README.en.md)
 
-以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.38**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。建議下載 DMG，按兩下即可開啟拖曳安裝視窗。最低部署目標為 macOS 15.0；目前已在 macOS 27.0 / Apple M1 上驗證原生執行，x86_64 自我測試已透過 Rosetta 驗證，尚未在 Intel 實機上驗證執行。
+以 Swift 和 AppKit 編寫的 macOS 啟動台。提供全螢幕應用程式網格、搜尋、資料夾、翻頁及多種開啟方式，適合希望繼續使用經典啟動台佈局的使用者。目前版本為 **0.39**，建置產物為同時包含 **Apple 晶片（arm64）與 Intel（x86_64）** 的通用應用程式。建議下載 DMG，掛載後可使用自動安裝程式。最低部署目標為 macOS 15.0；目前已在 macOS 27.0 / Apple M1 上驗證原生執行，x86_64 自我測試已透過 Rosetta 驗證，尚未在 Intel 實機上驗證執行。
 
 安裝包中的檔案名稱仍為簡體中文，例如 `启动台.app`；以下指令及路徑保留實際名稱，可直接複製使用。
 
@@ -27,15 +27,15 @@ chmod +x build.sh
 ./build.sh
 ```
 
-腳本分別編譯 arm64 和 x86_64，再合併為通用執行檔，於 `dist/` 產生 `启动台.app`、`启动台-通用版.dmg` 及備用的 `启动台-通用版.zip`。首次建置會在 `.build/dmg-tools` 建立 Python 虛擬環境，並安裝 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包相依套件，需要連線至網路；之後可重複使用。若 `python3` 版本較舊，可使用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定直譯器。DMG 使用自訂背景、固定圖示位置及 Applications 捷徑。腳本使用本機 macOS SDK 編譯，並對合併後的應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
+腳本分別編譯 arm64 和 x86_64，再合併為通用應用程式與安裝程式，於 `dist/` 產生 `启动台.app`、`安装启动台.app`、`启动台-通用版.dmg` 及備用的 `启动台-通用版.zip`。首次建置會在 `.build/dmg-tools` 建立 Python 虛擬環境，並安裝 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包相依套件，需要連線至網路；之後可重複使用。若 `python3` 版本較舊，可使用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定直譯器。DMG 使用自訂背景、固定圖示位置及 Applications 捷徑。腳本使用本機 macOS SDK 編譯，並對合併後的應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
 
 ## 安裝與使用
 
-### 手動安裝
+### 自動安裝與更新
 
-從 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下載通用版 **DMG**。按兩下掛載後，視窗左側顯示啟動台，右側顯示 **Applications** 資料夾，中間有拖曳箭頭。將啟動台拖入右側資料夾，再從 `/Applications` 開啟；安裝完成後，可在 Finder 側邊欄退出「启动台」磁碟映像。視窗下方保留紅色「安裝後若提示無法開啟」提示，以及「隱私權與安全性 → 強制打開」的操作示意圖，並提供安裝說明及舊版殘留清理工具。示意圖以簡體中文顯示。
+從 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下載通用版 **DMG**，按兩下掛載後，再按兩下左側的 **「安装启动台.app」**。若已安裝舊版，安裝程式會先要求舊版結束，等待程序結束後取代 `/Applications/启动台.app`；圖示排序、資料夾和設定均會保留。完成後可直接從安裝程式開啟新版，再從 Finder 側邊欄退出磁碟映像。DMG 下方仍保留「隱私權與安全性 → 強制打開」的操作示意圖。
 
-若已有舊版本，請先完全結束所有正在執行的啟動台（可在「活動監視器」中確認），再拖曳新版並等待複製完成；複製期間不要啟動。若取代時顯示「無法打開」，請確認複製完成、結束殘留的舊程序，然後從 `/Applications/启动台.app` 打開。登入時啟動需要應用程式位於 `/Applications`。也提供備用 ZIP：解壓縮後，將 `启动台.app` 拖到同一資料夾內名為 `应用程序` 的捷徑即可。
+仍可將中間的「启动台.app」手動拖曳到右側 Applications 資料夾。**Finder 的「取代」對話框無法自動結束執行中的舊版**；升級時請使用左側安裝程式。備用 ZIP 解壓縮後也包含「安装启动台.app」。若安裝程式沒有寫入 `/Applications` 的權限，會保留舊版並顯示錯誤；此時可先結束舊版，再使用 Finder 拖曳安裝。
 
 ### Homebrew 安裝
 

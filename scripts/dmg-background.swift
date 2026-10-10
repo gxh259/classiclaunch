@@ -42,26 +42,26 @@ for scale in [1, 2] {
     text("ClassicLaunchpad · Apple silicon & Intel", in: NSRect(x: 36, y: 76, width: 648, height: 24),
          size: 13, color: secondary)
 
-    // Horizontal installation arrow; the app and folder are real Finder icons.
+    // Manual drag arrow; the updater, app, and Applications are real Finder icons.
     let arrow = NSBezierPath()
-    arrow.move(to: NSPoint(x: 321, y: 190))
-    arrow.line(to: NSPoint(x: 393, y: 190))
-    arrow.move(to: NSPoint(x: 376, y: 173))
-    arrow.line(to: NSPoint(x: 393, y: 190))
-    arrow.line(to: NSPoint(x: 376, y: 207))
+    arrow.move(to: NSPoint(x: 462, y: 190))
+    arrow.line(to: NSPoint(x: 512, y: 190))
+    arrow.move(to: NSPoint(x: 497, y: 175))
+    arrow.line(to: NSPoint(x: 512, y: 190))
+    arrow.line(to: NSPoint(x: 497, y: 205))
     arrow.lineWidth = 5
     arrow.lineCapStyle = .round
     arrow.lineJoinStyle = .round
     NSColor(calibratedRed: 0.18, green: 0.48, blue: 0.90, alpha: 1).setStroke()
     arrow.stroke()
 
-    text("拖动安装 · 拖曳安裝 · Drag to install",
+    text("双击左侧“安装启动台”自动安装或更新",
          in: NSRect(x: 36, y: 270, width: 648, height: 30),
          size: 18, weight: .medium, color: ink, centered: true)
-    text("拖入 Applications 后，再从应用程序打开 / Open from Applications after copying",
+    text("Double-click Install Launchpad to quit the old version and replace it",
          in: NSRect(x: 24, y: 306, width: 672, height: 25),
          size: 12, color: secondary, centered: true)
-    text("升级前请先退出旧版，等待替换完成后再打开 / Quit before replacing; open after copying",
+    text("手动安装：将中间的“启动台”拖到右侧 Applications；更新请使用左侧安装器",
          in: NSRect(x: 24, y: 332, width: 672, height: 18),
          size: 11, color: secondary, centered: true)
     // Installation help stays in the window, using a settings illustration

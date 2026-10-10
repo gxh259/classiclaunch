@@ -922,18 +922,30 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
               appURL.deletingLastPathComponent().path != "/Applications" else { return false }
         let alert = NSAlert()
         alert.messageText = L("安装启动台")
+        let installerURL = appURL.deletingLastPathComponent()
+            .appendingPathComponent("安装启动台.app", isDirectory: true)
+        let hasInstaller = FileManager.default.fileExists(atPath: installerURL.path)
         let hasShortcut = ["Applications", "应用程序"].contains { name in
             FileManager.default.fileExists(atPath:
                 appURL.deletingLastPathComponent().appendingPathComponent(name).path)
         }
-        alert.informativeText = hasShortcut
-            ? L("请将“启动台.app”拖到旁边的应用程序文件夹快捷方式。安装完成后，从“应用程序”打开启动台。")
-            : L("请在访达中将“启动台.app”拖到“应用程序”（/Applications）。安装完成后，从“应用程序”打开启动台。")
-        alert.addButton(withTitle: L("在访达中显示"))
+        alert.informativeText = hasInstaller
+            ? L("请运行旁边的“安装启动台.app”，它会自动退出旧版并安装新版。")
+            : hasShortcut
+                ? L("请将“启动台.app”拖到旁边的应用程序文件夹快捷方式。安装完成后，从“应用程序”打开启动台。")
+                : L("请在访达中将“启动台.app”拖到“应用程序”（/Applications）。安装完成后，从“应用程序”打开启动台。")
+        alert.addButton(withTitle: hasInstaller ? L("打开安装器") : L("在访达中显示"))
         alert.addButton(withTitle: L("暂时运行"))
         NSApp.activate(ignoringOtherApps: true)
         if alert.runModal() == .alertFirstButtonReturn {
-            NSWorkspace.shared.activateFileViewerSelecting([appURL])
+            if hasInstaller {
+                NSWorkspace.shared.openApplication(at: installerURL,
+                    configuration: NSWorkspace.OpenConfiguration()) { _, error in
+                    if let error { NSLog("Could not open installer: %@", error.localizedDescription) }
+                }
+            } else {
+                NSWorkspace.shared.activateFileViewerSelecting([appURL])
+            }
             DispatchQueue.main.async { NSApp.terminate(nil) }
             return true
         }
@@ -1668,6 +1680,60 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
 @main struct Main {
     static func main() {
+        if CommandLine.arguments.contains("--self-test-installer") {
+            let manager = FileManager.default
+            let root = manager.temporaryDirectory.appendingPathComponent(
+                "classic-launchpad-installer-test-\(UUID().uuidString)", isDirectory: true)
+            defer { try? manager.removeItem(at: root) }
+            let source = root.appendingPathComponent("Download/启动台.app", isDirectory: true)
+            let applications = root.appendingPathComponent("Applications", isDirectory: true)
+            let installed = applications.appendingPathComponent("启动台.app", isDirectory: true)
+            func fixture(_ app: URL, bundleID: String, marker: String) throws {
+                let contents = app.appendingPathComponent("Contents", isDirectory: true)
+                let executable = contents.appendingPathComponent("MacOS/ClassicLaunchpad")
+                try manager.createDirectory(at: executable.deletingLastPathComponent(),
+                                            withIntermediateDirectories: true)
+                let info: [String: Any] = ["CFBundleIdentifier": bundleID,
+                                           "CFBundleExecutable": "ClassicLaunchpad",
+                                           "CFBundlePackageType": "APPL"]
+                let plist = try PropertyListSerialization.data(fromPropertyList: info,
+                                                                  format: .xml, options: 0)
+                try plist.write(to: contents.appendingPathComponent("Info.plist"))
+                try Data(marker.utf8).write(to: executable)
+                try manager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: executable.path)
+            }
+            do {
+                try fixture(source, bundleID: AppInstaller.bundleIdentifier, marker: "new")
+                try fixture(installed, bundleID: AppInstaller.bundleIdentifier, marker: "old")
+                let installer = AppInstaller(applicationsDirectory: applications)
+                try installer.install(from: source, quitRunning: false)
+                let executable = installed.appendingPathComponent("Contents/MacOS/ClassicLaunchpad")
+                guard String(data: try Data(contentsOf: executable), encoding: .utf8) == "new",
+                      try manager.contentsOfDirectory(atPath: applications.path) == ["启动台.app"] else {
+                    fatalError("Installer did not replace the previous app cleanly")
+                }
+                try manager.removeItem(at: installed)
+                try fixture(installed, bundleID: "example.unrelated", marker: "other")
+                do {
+                    try installer.install(from: source, quitRunning: false)
+                    fatalError("Installer replaced an unrelated app")
+                } catch AppInstallationError.differentInstalledApp {
+                    guard String(data: try Data(contentsOf: executable), encoding: .utf8) == "other" else {
+                        fatalError("Installer changed an unrelated app")
+                    }
+                }
+                try manager.removeItem(at: installed)
+                try fixture(installed, bundleID: AppInstaller.bundleIdentifier, marker: "broken")
+                try manager.removeItem(at: executable)
+                try installer.install(from: source, quitRunning: false)
+                guard String(data: try Data(contentsOf: executable), encoding: .utf8) == "new",
+                      try manager.contentsOfDirectory(atPath: applications.path) == ["启动台.app"] else {
+                    fatalError("Installer did not repair an incomplete old app")
+                }
+            } catch { fatalError("Installer self-test failed: \(error)") }
+            print("Installer self-test passed")
+            return
+        }
         if CommandLine.arguments.contains("--self-test-gestures") {
             var mouse = MousePageDragState()
             mouse.begin(at: .zero, source: nil, time: 0)
