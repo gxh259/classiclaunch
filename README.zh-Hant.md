@@ -20,6 +20,10 @@ codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
 /Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
 ```
 
+v0.40 的獨立「安装启动台.app」會在自身旁邊尋找「启动台.app」。macOS 可能把從下載的 DMG 開啟的應用程式隔離到隨機路徑（[Apple 的 App Translocation 說明](https://developer.apple.com/documentation/fileprovider/nsfileprovidererror/code/providertranslocated)），使安裝程式找不到同層應用程式並顯示「應用程式不完整」。這則訊息不代表舊版已被取代。v0.41 已將安裝邏輯合併到同一個應用程式，不再依賴同層路徑；DMG 中的應用程式圖示與 Applications 捷徑也分列於箭頭兩側。v0.41 尚未在回報故障的 M4 / macOS 26.5 上驗證。
+
+終端機顯示 `operation not permitted` 表示系統拒絕執行；單憑這一行無法區分隔離標記、簽署政策或其他安全軟體。可在故障電腦上繼續檢查 `xattr -p com.apple.quarantine /Applications/启动台.app` 和 `spctl --assess --type execute -vv /Applications/启动台.app` 的輸出。確認來源可信後，安裝完成的隔離標記處理方式請見下文「首次開啟與簽署」。
+
 安裝包中的檔案名稱仍為簡體中文，例如 `启动台.app`；以下指令及路徑保留實際名稱，可直接複製使用。
 
 ## 功能

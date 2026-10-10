@@ -20,6 +20,10 @@ codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
 /Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
 ```
 
+v0.40 的独立“安装启动台.app”会在自身旁边查找“启动台.app”。macOS 可能把从下载的 DMG 打开的应用隔离到随机路径（[Apple 的 App Translocation 说明](https://developer.apple.com/documentation/fileprovider/nsfileprovidererror/code/providertranslocated)），使安装器找不到同级应用并提示“应用不完整”。这条提示不代表旧版已经被替换。v0.41 已将安装逻辑合并到同一个应用，不再依赖同级路径；DMG 里的应用图标和 Applications 快捷方式也分居箭头两侧。v0.41 尚未在反馈故障的 M4 / macOS 26.5 上验证。
+
+终端显示 `operation not permitted` 说明系统拒绝执行，单凭这一行无法区分隔离标记、签名策略或其他安全软件。可在故障电脑上继续检查 `xattr -p com.apple.quarantine /Applications/启动台.app` 和 `spctl --assess --type execute -vv /Applications/启动台.app` 的输出。若已确认来源可信，安装后的隔离标记处理方式见下文“首次打开与签名”。
+
 ## 功能
 
 - 全屏网格与应用搜索；图标、名称字号和行距随屏幕可用空间调整，内屏保持紧凑布局，扩展屏增大图标并缩短行间空白。搜索框与设置、刷新按钮在切换显示器时重新定位；支持拖拽排序、创建和重命名文件夹、隐藏应用及自定义应用名称。

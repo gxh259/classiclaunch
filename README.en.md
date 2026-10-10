@@ -20,6 +20,10 @@ codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
 /Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
 ```
 
+The separate `安装启动台.app` in v0.40 looks for `启动台.app` beside itself. macOS may move an app launched from a downloaded DMG to a randomized location ([Apple's App Translocation documentation](https://developer.apple.com/documentation/fileprovider/nsfileprovidererror/code/providertranslocated)), so the installer can fail to find its sibling and report an incomplete app. That message does not mean the older version was replaced. v0.41 puts installation inside the same app and no longer depends on a sibling path; its DMG places the app and Applications shortcut on opposite sides of the arrow. v0.41 has not yet been verified on the affected M4 / macOS 26.5 Mac.
+
+The Terminal message `operation not permitted` means execution was denied, but that line alone cannot distinguish quarantine, signature policy, or other security software. On the affected Mac, check the output of `xattr -p com.apple.quarantine /Applications/启动台.app` and `spctl --assess --type execute -vv /Applications/启动台.app`. If you trust the source, see **First launch and signing** below for handling quarantine after installation.
+
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 
 ## Features
