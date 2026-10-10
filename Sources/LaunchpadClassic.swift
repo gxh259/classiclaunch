@@ -499,14 +499,17 @@ final class GridView: NSView {
             return (NSRect(x: panel.minX + 44, y: panel.maxY - 38 - CGFloat(rows) * cellH,
                            width: CGFloat(columns) * cellW, height: CGFloat(rows) * cellH), cellW, cellH)
         }
-        let cellW = min(260, (bounds.width - 110) / CGFloat(columns))
+        let horizontalInset = min(160, max(56, bounds.width * 0.07))
+        let cellW = min(340, max(1, (bounds.width - horizontalInset * 2) / CGFloat(columns)))
         let topInset: CGFloat = 125
         let bottomInset = pageIndicatorY + 42
-        let cellH = min(215, max(1, (bounds.height - topInset - bottomInset) / CGFloat(rows)))
+        let availableHeight = max(1, bounds.height - topInset - bottomInset)
+        let cellH = min(235, availableHeight / CGFloat(rows))
+        let gridHeight = CGFloat(rows) * cellH
         return (NSRect(x: (bounds.width - CGFloat(columns) * cellW) / 2,
-                       y: bounds.height - topInset - CGFloat(rows) * cellH,
+                       y: bottomInset + (availableHeight - gridHeight) / 2,
                        width: CGFloat(columns) * cellW,
-                       height: CGFloat(rows) * cellH), cellW, cellH)
+                       height: gridHeight), cellW, cellH)
     }
 
     private func folderPanel() -> NSRect {
@@ -528,21 +531,27 @@ final class GridView: NSView {
 
     private func interactiveTileIndex(at point: NSPoint) -> Int? {
         guard let index = tileIndex(at: point) else { return nil }
+        let (icon, label) = tileRects(forTileAt: index)
+        return icon.insetBy(dx: -5, dy: -5).contains(point) || label.contains(point) ? index : nil
+    }
+
+    fileprivate func tileRects(forTileAt index: Int) -> (NSRect, NSRect) {
         let (rect, cellW, cellH) = geometry()
         let local = index - page * pageSize
         let x = rect.minX + CGFloat(local % columns) * cellW
         let y = rect.maxY - CGFloat(local / columns + 1) * cellH
-        let (icon, label) = tileFrames(x: x, y: y, cellW: cellW, cellH: cellH)
-        return icon.insetBy(dx: -5, dy: -5).contains(point) || label.contains(point) ? index : nil
+        return tileFrames(x: x, y: y, cellW: cellW, cellH: cellH)
     }
 
     private func tileFrames(x: CGFloat, y: CGFloat, cellW: CGFloat, cellH: CGFloat) -> (NSRect, NSRect) {
-        let labelHeight = min(31, max(12, cellH * 0.27))
-        let iconSize = max(12, min(112, cellW - 12, cellH - labelHeight - 5))
+        let labelHeight = min(24, max(12, cellH * 0.24))
+        let gap = min(8, max(3, cellH * 0.04))
+        let iconSize = max(8, min(112, cellW - 12, cellH - labelHeight - gap - 2))
+        let groupBottom = y + max(0, (cellH - labelHeight - gap - iconSize) / 2)
         let icon = NSRect(x: x + (cellW - iconSize) / 2,
-                          y: y + labelHeight + max(2, (cellH - labelHeight - iconSize) / 2),
+                          y: groupBottom + labelHeight + gap,
                           width: iconSize, height: iconSize)
-        let label = NSRect(x: x + 3, y: y + 2, width: cellW - 6, height: labelHeight)
+        let label = NSRect(x: x + 3, y: groupBottom, width: cellW - 6, height: labelHeight)
         return (icon, label)
     }
 
@@ -1708,16 +1717,31 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             grid.mouseUp(with: event(.leftMouseUp, blank, 1.1))
             guard dismissed == 1 else { fatalError("Background click must still dismiss") }
             grid.goToPage(0)
-            let icon = NSPoint(x: 184, y: 891)
+            let firstIcon = grid.tileRects(forTileAt: 0).0
+            let icon = NSPoint(x: firstIcon.midX, y: firstIcon.midY)
             grid.mouseDown(with: event(.leftMouseDown, icon, 2))
-            grid.mouseDragged(with: event(.leftMouseDragged, NSPoint(x: 84, y: 891), 2.1))
-            grid.mouseUp(with: event(.leftMouseUp, NSPoint(x: 84, y: 891), 2.2))
+            let swipeEnd = NSPoint(x: icon.x - 100, y: icon.y)
+            grid.mouseDragged(with: event(.leftMouseDragged, swipeEnd, 2.1))
+            grid.mouseUp(with: event(.leftMouseUp, swipeEnd, 2.2))
             guard grid.page == 1, selected == 0, dropped == 0 else { fatalError("Icon swipe must page") }
             grid.goToPage(0)
             grid.mouseDown(with: event(.leftMouseDown, icon, 3))
-            grid.mouseDragged(with: event(.leftMouseDragged, NSPoint(x: 440, y: 891), 3.5))
-            grid.mouseUp(with: event(.leftMouseUp, NSPoint(x: 440, y: 891), 3.6))
+            let secondIcon = grid.tileRects(forTileAt: 1).0
+            let dropPoint = NSPoint(x: secondIcon.midX, y: secondIcon.midY)
+            grid.mouseDragged(with: event(.leftMouseDragged, dropPoint, 3.5))
+            grid.mouseUp(with: event(.leftMouseUp, dropPoint, 3.6))
             guard grid.page == 0, dropped == 1 else { fatalError("Icon hold-and-drag must rearrange") }
+            let (_, name) = grid.tileRects(forTileAt: 0)
+            let nameGap = firstIcon.minY - name.maxY
+            let standardSpacing = secondIcon.midX - firstIcon.midX
+            grid.frame.size.width = 1280
+            let compactSpacing = grid.tileRects(forTileAt: 1).0.midX - grid.tileRects(forTileAt: 0).0.midX
+            grid.frame.size.width = 2560
+            let expandedSpacing = grid.tileRects(forTileAt: 1).0.midX - grid.tileRects(forTileAt: 0).0.midX
+            guard (3...8).contains(nameGap), compactSpacing < standardSpacing,
+                  standardSpacing < expandedSpacing else {
+                fatalError("Icon labels or adaptive spacing are incorrect")
+            }
             print("Page gesture self-test passed")
             return
         }
