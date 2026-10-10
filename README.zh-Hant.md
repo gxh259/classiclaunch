@@ -47,7 +47,7 @@ chmod +x build.sh
 ./build.sh
 ```
 
-腳本分別編譯 arm64 和 x86_64，再合併為通用應用程式。`dist/` 包含 `启动台.app` 和指向目前版本 DMG、ZIP 的連結。完整安裝包保存在專案根目錄的 `releases/`；每次成功建置後僅保留最新兩個版本的 DMG 和 ZIP。首次建置會在 `.build/dmg-tools` 建立 Python 虛擬環境，並安裝 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包相依套件，需要連線至網路；之後可重複使用。若 `python3` 版本較舊，可使用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定直譯器。DMG 使用自訂背景、固定圖示位置及 Applications 捷徑。腳本使用本機 macOS SDK 編譯，並對應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
+腳本分別編譯 arm64 和 x86_64，再合併為通用應用程式。`dist/` 包含 `启动台.app` 和指向目前版本 DMG 的連結。完整安裝包保存在專案根目錄的 `releases/`；每次成功建置後僅保留最新兩個版本的 DMG，不再產生或保留 ZIP。首次建置會在 `.build/dmg-tools` 建立 Python 虛擬環境，並安裝 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包相依套件，需要連線至網路；之後可重複使用。若 `python3` 版本較舊，可使用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定直譯器。DMG 使用自訂背景、固定圖示位置及 Applications 捷徑。腳本使用本機 macOS SDK 編譯，並對應用程式進行臨時簽署（ad hoc signing）。此建置尚未經過 Apple 公證。
 
 ## 安裝與使用
 
@@ -55,7 +55,7 @@ chmod +x build.sh
 
 從 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下載通用版 **DMG**，按兩下掛載後，再按兩下其中唯一的 **「启动台.app」**。若尚未安裝，應用程式會自動複製到 `/Applications/启动台.app` 並開啟；若已有舊版，會提示更新，確認後先結束舊版、取代應用程式並開啟新版。圖示排序、資料夾和設定均會保留。完成後從 Finder 側邊欄退出磁碟映像。DMG 下方仍保留「隱私權與安全性 → 強制打開」的操作示意圖。
 
-也可將「启动台.app」拖曳到右側 Applications 資料夾，再從「應用程式」首次開啟；若首次開啟時已位於該目錄，就會直接執行。**Finder 拖曳只會複製檔案，無法在複製前執行應用程式內的安裝邏輯。** 若按兩下 DMG 中的新版只喚醒正在執行的舊版，請先結束舊版，再按兩下新版並依提示更新。手動拖曳更新也須先結束舊版。備用 ZIP 解壓縮後也只有「启动台.app」。若沒有寫入 `/Applications` 的權限，應用程式會保留舊版並顯示錯誤。
+也可將「启动台.app」拖曳到右側 Applications 資料夾，再從「應用程式」首次開啟；若首次開啟時已位於該目錄，就會直接執行。**Finder 拖曳只會複製檔案，無法在複製前執行應用程式內的安裝邏輯。** 若按兩下 DMG 中的新版只喚醒正在執行的舊版，請先結束舊版，再按兩下新版並依提示更新。手動拖曳更新也須先結束舊版。若沒有寫入 `/Applications` 的權限，應用程式會保留舊版並顯示錯誤。
 
 ### Homebrew 安裝
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the two newest locally built DMG/ZIP releases in the project folder."""
+"""Keep the two newest locally built DMGs in the project folder."""
 
 import argparse
 import os
@@ -9,7 +9,8 @@ import tempfile
 from pathlib import Path
 
 
-NAME = re.compile(r"^ClassicLaunchpad-(\d+(?:\.\d+)*)-universal\.(dmg|zip)$")
+NAME = re.compile(r"^ClassicLaunchpad-(\d+(?:\.\d+)*)-universal\.dmg$")
+OLD_ZIP = re.compile(r"^ClassicLaunchpad-\d+(?:\.\d+)*-universal\.zip$")
 
 
 def prune(releases: Path) -> list[str]:
@@ -21,7 +22,8 @@ def prune(releases: Path) -> list[str]:
     keep = set(sorted(versions, key=lambda value: tuple(map(int, value.split("."))), reverse=True)[:2])
     for path in releases.iterdir():
         match = NAME.fullmatch(path.name)
-        if path.is_file() and match and match.group(1) not in keep:
+        if path.is_file() and (OLD_ZIP.fullmatch(path.name) or
+                               (match and match.group(1) not in keep)):
             path.unlink()
     return sorted(keep, key=lambda value: tuple(map(int, value.split("."))), reverse=True)
 
@@ -32,22 +34,20 @@ def archive(root: Path, version: str) -> list[str]:
     dist = root / "dist"
     releases = root / "releases"
     releases.mkdir(exist_ok=True)
-    for extension in ("dmg", "zip"):
-        source = dist / f"启动台-通用版.{extension}"
-        if not source.is_file() or source.is_symlink():
-            raise FileNotFoundError(f"Missing fresh build: {source}")
-    for extension in ("dmg", "zip"):
-        source = dist / f"启动台-通用版.{extension}"
-        destination = releases / f"ClassicLaunchpad-{version}-universal.{extension}"
-        with tempfile.NamedTemporaryFile(prefix=".release-", dir=releases, delete=False) as temp:
-            temporary = Path(temp.name)
-        try:
-            shutil.copy2(source, temporary)
-            os.replace(temporary, destination)
-        finally:
-            temporary.unlink(missing_ok=True)
-        source.unlink()
-        source.symlink_to(Path("..") / "releases" / destination.name)
+    source = dist / "启动台-通用版.dmg"
+    if not source.is_file() or source.is_symlink():
+        raise FileNotFoundError(f"Missing fresh build: {source}")
+    destination = releases / f"ClassicLaunchpad-{version}-universal.dmg"
+    with tempfile.NamedTemporaryFile(prefix=".release-", dir=releases, delete=False) as temp:
+        temporary = Path(temp.name)
+    try:
+        shutil.copy2(source, temporary)
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+    source.unlink()
+    source.symlink_to(Path("..") / "releases" / destination.name)
+    (dist / "启动台-通用版.zip").unlink(missing_ok=True)
     return prune(releases)
 
 

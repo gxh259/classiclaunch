@@ -8,7 +8,6 @@ BUILD_DIR="$PWD/.build"
 DIST_DIR="$PWD/dist"
 APP_DIR="$DIST_DIR/启动台.app"
 PACKAGE_DIR="$DIST_DIR/启动台安装包"
-ZIP_PATH="$DIST_DIR/启动台-通用版.zip"
 
 mkdir -p "$BUILD_DIR" "$DIST_DIR"
 ./scripts/generate-icon.sh "$BUILD_DIR/AppIcon.icns"
@@ -65,9 +64,6 @@ cat > "$PACKAGE_DIR/安装说明.txt" <<'EOF'
 访达的拖拽和“替换”只复制文件，不会运行应用代码；若更新时旧版仍在运行，请先退出旧版，或使用上面的双击安装方式。
 安装完成后可在访达侧边栏推出“启动台”磁盘映像。
 
-ZIP 备用安装：
-解压后双击“启动台.app”，未安装会自动安装，已有旧版时按提示更新；也可在退出旧版后拖入“应用程序”。
-
 Homebrew 安装：
 brew tap gxh259/classiclaunch https://github.com/gxh259/classiclaunch.git
 brew install --cask gxh259/classiclaunch/classiclaunch
@@ -82,9 +78,6 @@ sudo xattr -r -d com.apple.quarantine /Applications/启动台.app
 这条 xattr 命令仅清除隔离标记，不会执行签名验证，也不能代替 Apple 公证。如需检查应用签名完整性，可运行：
 codesign --verify --deep --strict /Applications/启动台.app
 EOF
-ditto -c -k --sequesterRsrc --keepParent "$PACKAGE_DIR" "$ZIP_PATH"
-
-printf '已生成：%s（arm64 + x86_64）\n' "$ZIP_PATH"
 bash ./scripts/build-dmg.sh
 VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Resources/Info.plist)"
 python3 ./scripts/archive-releases.py --version "$VERSION"

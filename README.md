@@ -45,7 +45,7 @@ chmod +x build.sh
 ./build.sh
 ```
 
-脚本分别编译 arm64 和 x86_64，再合并成通用应用，在 `dist/` 中生成 `启动台.app` 和指向当前版本安装包的 DMG、ZIP 快捷路径。完整安装包保存在项目根目录的 `releases/`，每次成功构建后只保留最新两个版本的 DMG 和 ZIP。首次构建会在 `.build/dmg-tools` 创建 Python 虚拟环境并安装 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包依赖，需要联网；后续可复用。若 `python3` 版本较旧，可用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定解释器。DMG 使用自定义背景、固定图标位置和 Applications 快捷方式。脚本使用本机 macOS SDK 编译，并对应用执行临时签名。这个构建没有经过 Apple 公证。
+脚本分别编译 arm64 和 x86_64，再合并成通用应用，在 `dist/` 中生成 `启动台.app` 和指向当前版本 DMG 的快捷路径。完整安装包保存在项目根目录的 `releases/`，每次成功构建后只保留最新两个版本的 DMG，不再生成或保留 ZIP。首次构建会在 `.build/dmg-tools` 创建 Python 虚拟环境并安装 [`dmgbuild`](https://github.com/dmgbuild/dmgbuild) 及固定版本的打包依赖，需要联网；后续可复用。若 `python3` 版本较旧，可用 `PYTHON_BIN=/path/to/python3 ./build.sh` 指定解释器。DMG 使用自定义背景、固定图标位置和 Applications 快捷方式。脚本使用本机 macOS SDK 编译，并对应用执行临时签名。这个构建没有经过 Apple 公证。
 
 ## 安装与使用
 
@@ -53,7 +53,7 @@ chmod +x build.sh
 
 从 [GitHub Releases](https://github.com/gxh259/classiclaunch/releases) 下载通用版 **DMG**，双击挂载后，再双击其中唯一的 **「启动台.app」**。如果尚未安装，应用会自动复制到 `/Applications/启动台.app` 并打开；如果已有旧版，应用会提示更新，确认后先退出旧版、替换应用并打开新版。图标排序、文件夹和设置会保留。完成后从访达侧边栏推出磁盘映像。DMG 下方仍保留“隐私与安全性 → 仍要打开”的操作示意图。
 
-也可以将「启动台.app」拖到右侧 Applications 文件夹，再从“应用程序”首次打开；首次打开时如已位于该目录，就直接运行。**访达拖拽仅执行复制，无法在复制前运行应用内的安装逻辑。** 如果双击 DMG 中的新版只唤醒正在运行的旧版，请先退出旧版，再双击新版并按提示更新。手动拖拽更新也须先退出旧版。备用 ZIP 解压后也只有「启动台.app」，操作相同。若没有写入 `/Applications` 的权限，应用会保留旧版并提示错误。
+也可以将「启动台.app」拖到右侧 Applications 文件夹，再从“应用程序”首次打开；首次打开时如已位于该目录，就直接运行。**访达拖拽仅执行复制，无法在复制前运行应用内的安装逻辑。** 如果双击 DMG 中的新版只唤醒正在运行的旧版，请先退出旧版，再双击新版并按提示更新。手动拖拽更新也须先退出旧版。若没有写入 `/Applications` 的权限，应用会保留旧版并提示错误。
 
 ### Homebrew 安装
 
