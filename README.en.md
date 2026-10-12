@@ -13,16 +13,12 @@ A macOS application launcher built with Swift and AppKit. It offers a full-scree
 | Apple M4 / macOS 26.5 | v0.43 was installed and verified to run normally. |
 | Intel | x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified. |
 
-If you still have v0.40 and it will not open, install [v0.43, verified on M4 / macOS 26.5](https://github.com/gxh259/classiclaunch/releases/tag/v0.43). If the new version also has trouble opening, preserve your personal app data and run these two Terminal commands on the affected Mac. Save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
+If the app will not open, preserve your personal app data and run these two Terminal commands on the affected Mac. Save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
 
 ```bash
 codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
 /Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
 ```
-
-The separate `安装启动台.app` in v0.40 looks for `启动台.app` beside itself. macOS may move an app launched from a downloaded DMG to a randomized location ([Apple's App Translocation documentation](https://developer.apple.com/documentation/fileprovider/nsfileprovidererror/code/providertranslocated)), so the installer can fail to find its sibling and report an incomplete app. That message does not mean the older version was replaced. v0.41 puts installation inside the same app and no longer depends on a sibling path; its DMG places the app and Applications shortcut on opposite sides of the arrow. v0.43 has now been installed and verified to work on the M4 / macOS 26.5 Mac that reported the earlier failure.
-
-The Terminal message `operation not permitted` means execution was denied, but that line alone cannot distinguish quarantine, signature policy, or other security software. On the affected Mac, check the output of `xattr -p com.apple.quarantine /Applications/启动台.app` and `spctl --assess --type execute -vv /Applications/启动台.app`. If you trust the source, see **First launch and signing** below for handling quarantine after installation.
 
 The files in the installation package retain their Simplified Chinese names, including `启动台.app`. The commands and paths below use the actual filenames and can be copied as written.
 

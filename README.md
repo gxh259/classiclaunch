@@ -13,16 +13,12 @@
 | Apple M4 / macOS 26.5 | v0.43 已安装验证，可正常运行。 |
 | Intel | x86_64 自测已通过 Rosetta；尚未在 Intel 实机上运行验证。 |
 
-如果仍在使用无法打开的 v0.40，建议安装[已在 M4 / macOS 26.5 验证的 v0.43](https://github.com/gxh259/classiclaunch/releases/tag/v0.43)。如果新版本仍有打开问题，请保留个人应用数据，并在故障电脑的终端运行下面两条命令，记录完整输出；第一条用于检查安装包签名，第二条可显示程序启动时的具体错误：
+若无法打开，请保留个人应用数据，并在故障电脑的终端运行下面两条命令，记录完整输出；第一条用于检查安装包签名，第二条可显示程序启动时的具体错误：
 
 ```bash
 codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
 /Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
 ```
-
-v0.40 的独立“安装启动台.app”会在自身旁边查找“启动台.app”。macOS 可能把从下载的 DMG 打开的应用隔离到随机路径（[Apple 的 App Translocation 说明](https://developer.apple.com/documentation/fileprovider/nsfileprovidererror/code/providertranslocated)），使安装器找不到同级应用并提示“应用不完整”。这条提示不代表旧版已经被替换。v0.41 已将安装逻辑合并到同一个应用，不再依赖同级路径；DMG 里的应用图标和 Applications 快捷方式也分居箭头两侧。v0.43 已在此前反馈故障的 M4 / macOS 26.5 电脑上安装验证，可正常使用。
-
-终端显示 `operation not permitted` 说明系统拒绝执行，单凭这一行无法区分隔离标记、签名策略或其他安全软件。可在故障电脑上继续检查 `xattr -p com.apple.quarantine /Applications/启动台.app` 和 `spctl --assess --type execute -vv /Applications/启动台.app` 的输出。若已确认来源可信，安装后的隔离标记处理方式见下文“首次打开与签名”。
 
 ## 功能
 
