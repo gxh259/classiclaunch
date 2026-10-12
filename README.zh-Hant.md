@@ -10,17 +10,17 @@
 | --- | --- |
 | Apple M1 / macOS 27.0 | v0.40 已在本機驗證執行。 |
 | Apple M4 / macOS 15.3 | 使用者回報可執行；具體應用程式版本尚待確認。 |
-| Apple M4 / macOS 26.5 | 使用者回報 v0.34 可執行；換成 v0.40 後，Finder 顯示「應用程式『启动台』無法打開」。原因調查中，v0.41–v0.43 尚未在這台電腦驗證。 |
+| Apple M4 / macOS 26.5 | 使用者已安裝驗證 v0.43，可正常使用。此前 v0.34 可執行，v0.40 取代安裝後曾出現無法開啟的問題。 |
 | Intel | x86_64 自我測試已透過 Rosetta 驗證；尚未在 Intel 實機上驗證執行。 |
 
-若 v0.40 無法開啟，可先改用[已知可在 M4 / macOS 26.5 執行的 v0.34](https://github.com/gxh259/classiclaunch/releases/tag/v0.34)。排查時請保留個人應用程式資料，並在出現故障的電腦上於終端機執行以下兩個指令，記錄完整輸出；第一個檢查安裝包簽章，第二個可顯示程式啟動時的具體錯誤：
+若仍在使用無法開啟的 v0.40，建議安裝[已在 M4 / macOS 26.5 驗證的 v0.43](https://github.com/gxh259/classiclaunch/releases/tag/v0.43)。若新版本仍有開啟問題，請保留個人應用程式資料，並在出現故障的電腦上於終端機執行以下兩個指令，記錄完整輸出；第一個檢查安裝包簽章，第二個可顯示程式啟動時的具體錯誤：
 
 ```bash
 codesign --verify --deep --strict --verbose=2 /Applications/启动台.app
 /Applications/启动台.app/Contents/MacOS/ClassicLaunchpad
 ```
 
-v0.40 的獨立「安装启动台.app」會在自身旁邊尋找「启动台.app」。macOS 可能把從下載的 DMG 開啟的應用程式隔離到隨機路徑（[Apple 的 App Translocation 說明](https://developer.apple.com/documentation/fileprovider/nsfileprovidererror/code/providertranslocated)），使安裝程式找不到同層應用程式並顯示「應用程式不完整」。這則訊息不代表舊版已被取代。v0.41 已將安裝邏輯合併到同一個應用程式，不再依賴同層路徑；DMG 中的應用程式圖示與 Applications 捷徑也分列於箭頭兩側。v0.41 尚未在回報故障的 M4 / macOS 26.5 上驗證。
+v0.40 的獨立「安装启动台.app」會在自身旁邊尋找「启动台.app」。macOS 可能把從下載的 DMG 開啟的應用程式隔離到隨機路徑（[Apple 的 App Translocation 說明](https://developer.apple.com/documentation/fileprovider/nsfileprovidererror/code/providertranslocated)），使安裝程式找不到同層應用程式並顯示「應用程式不完整」。這則訊息不代表舊版已被取代。v0.41 已將安裝邏輯合併到同一個應用程式，不再依賴同層路徑；DMG 中的應用程式圖示與 Applications 捷徑也分列於箭頭兩側。v0.43 已在此前回報故障的 M4 / macOS 26.5 電腦上安裝驗證，可正常使用。
 
 終端機顯示 `operation not permitted` 表示系統拒絕執行；單憑這一行無法區分隔離標記、簽署政策或其他安全軟體。可在故障電腦上繼續檢查 `xattr -p com.apple.quarantine /Applications/启动台.app` 和 `spctl --assess --type execute -vv /Applications/启动台.app` 的輸出。確認來源可信後，安裝完成的隔離標記處理方式請見下文「首次開啟與簽署」。
 
