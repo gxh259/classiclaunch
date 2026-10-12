@@ -8,9 +8,9 @@ A macOS application launcher built with Swift and AppKit. It offers a full-scree
 
 | Device and system | Known result |
 | --- | --- |
-| Apple M1 / macOS 27.0 | v0.40 has been run locally. |
-| Apple M4 / macOS 15.3 | A user reports that the app runs; the exact app version is unconfirmed. |
-| Apple M4 / macOS 26.5 | A user has installed and verified that v0.43 works normally. Previously, v0.34 worked, while v0.40 failed to open after replacement. |
+| Apple M1 / macOS 27.0 | v0.43 was installed and verified to run normally. |
+| Apple M4 / macOS 15.3 | v0.43 was installed and verified to run normally. |
+| Apple M4 / macOS 26.5 | v0.43 was installed and verified to run normally. |
 | Intel | x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified. |
 
 If you still have v0.40 and it will not open, install [v0.43, verified on M4 / macOS 26.5](https://github.com/gxh259/classiclaunch/releases/tag/v0.43). If the new version also has trouble opening, preserve your personal app data and run these two Terminal commands on the affected Mac. Save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
