@@ -40,7 +40,7 @@ build_arch() {
 build_arch arm64
 build_arch x86_64
 
-rm -rf "$APP_DIR" "$DIST_DIR/安装启动台.app" "$PACKAGE_DIR" "$ZIP_PATH" "$DIST_DIR/启动台.zip" "$DIST_DIR/启动台-通用版.dmg"
+rm -rf "$APP_DIR" "$DIST_DIR/安装启动台.app" "$PACKAGE_DIR" "$DIST_DIR/启动台-通用版.zip" "$DIST_DIR/启动台.zip" "$DIST_DIR/启动台-通用版.dmg"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources" "$PACKAGE_DIR"
 lipo -create \
   "$BUILD_DIR/ClassicLaunchpad-arm64" \

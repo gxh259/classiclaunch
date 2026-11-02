@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.43**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.44**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
 
 ## Compatibility reports
 
@@ -27,6 +27,7 @@ The files in the installation package retain their Simplified Chinese names, inc
 - Full-screen app grid and search. Icon size, label size, and row spacing adapt to the available screen area, keeping the built-in display compact and enlarging icons on external displays. The search field and its Settings and Rescan buttons are repositioned together when the display changes. Also supports drag-to-reorder, folder creation and renaming, hidden apps, and custom app names.
 - Choose a 5×7, 6×8, 7×8, or 7×9 grid, or enter a custom layout of 2–12 rows and 3–16 columns in Settings. Existing saved 7×7 layouts remain available as custom layouts. Switch pages by dragging horizontally with the left mouse button, swiping horizontally with three fingers on a trackpad, using the scroll wheel or arrow keys, or clicking the fixed page dots at the bottom.
 - Scan apps from `/Applications`, preferring names that match the system language. Apps in Finder's Utilities folder are grouped into an **Other** folder. Rescan manually or optionally supplement system apps using the Dock Launchpad database.
+- Check for added or removed apps before each opening and rescan automatically when the app directories change, keeping the existing icon order and folders. Manual **Rescan Apps** remains available to force a refresh.
 - Open from the Dock, menu bar, a recordable global keyboard shortcut, or a hot corner.
 - Settings provide Light, Dark, and Follow System themes, Launch at Login, and the option to show or hide the menu bar icon. The interface can follow the system language or use Simplified Chinese, Traditional Chinese, or English.
 - Click the background outside the grid or press Escape to close the launcher. Context menus let you open, rename, hide, or reveal apps in Finder. Third-party apps can also be moved to the Trash when permissions allow.

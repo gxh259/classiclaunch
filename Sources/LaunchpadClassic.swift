@@ -202,6 +202,7 @@ final class AppCatalog {
     private(set) static var lastDockDatabaseOpened = false
     private(set) static var lastDockAppCount = 0
     private(set) static var lastApplicationsCount = 0
+    private(set) static var loadedApplicationPaths = Set<String>()
     static var includeDockSystemApps: Bool {
         LauncherStore.shared.data.preferences.includeDockSystemApps
     }
@@ -210,39 +211,10 @@ final class AppCatalog {
         lastDockDatabaseOpened = false
         let dockURLs = loadDockLaunchpadApps()
         lastDockAppCount = dockURLs.count
+        let (applicationURLs, applicationsCount) = installedApplicationURLs()
+        lastApplicationsCount = applicationsCount
+        loadedApplicationPaths = Set(applicationURLs.map { $0.standardizedFileURL.path })
         let manager = FileManager.default
-        let rootURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
-        var applicationURLs: [URL] = []
-        var directories: [(URL, Int)] = [(rootURL, 0)]
-        while let (directory, depth) = directories.popLast() {
-            guard let children = try? manager.contentsOfDirectory(at: directory,
-                includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
-                options: []) else { continue }
-            for url in children {
-                guard !url.lastPathComponent.hasPrefix(".") else { continue }
-                if url.pathExtension.lowercased() == "app" {
-                    // Finder also shows app links such as /Applications/Safari.app.
-                    // The skipsHiddenFiles option unexpectedly filters that link.
-                    if manager.fileExists(atPath: url.path) { applicationURLs.append(url) }
-                    continue
-                }
-                guard depth < 3,
-                      let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
-                      values.isDirectory == true, values.isSymbolicLink != true else { continue }
-                directories.append((url, depth + 1))
-            }
-        }
-        lastApplicationsCount = applicationURLs.count
-        // Finder presents these system apps inside its Utilities folder too.
-        let systemUtilities = URL(fileURLWithPath: "/System/Applications/Utilities", isDirectory: true)
-        if let children = try? manager.contentsOfDirectory(at: systemUtilities,
-            includingPropertiesForKeys: nil, options: []) {
-            applicationURLs += children.filter {
-                !$0.lastPathComponent.hasPrefix(".") &&
-                $0.pathExtension.lowercased() == "app" &&
-                manager.fileExists(atPath: $0.path)
-            }
-        }
         var byPath: [String: URL] = [:]
         for url in applicationURLs { byPath[url.standardizedFileURL.path] = url }
         for url in dockURLs {
@@ -266,6 +238,48 @@ final class AppCatalog {
         return entries.sorted {
             $0.name.localizedStandardCompare($1.name) == .orderedAscending
         }
+    }
+
+    static func installedApplicationsChanged() -> Bool {
+        let (urls, _) = installedApplicationURLs()
+        return Set(urls.map { $0.standardizedFileURL.path }) != loadedApplicationPaths
+    }
+
+    private static func installedApplicationURLs() -> ([URL], Int) {
+        let manager = FileManager.default
+        let rootURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        var applicationURLs: [URL] = []
+        var directories: [(URL, Int)] = [(rootURL, 0)]
+        while let (directory, depth) = directories.popLast() {
+            guard let children = try? manager.contentsOfDirectory(at: directory,
+                includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+                options: []) else { continue }
+            for url in children {
+                guard !url.lastPathComponent.hasPrefix(".") else { continue }
+                if url.pathExtension.lowercased() == "app" {
+                    // Finder also shows app links such as /Applications/Safari.app.
+                    // The skipsHiddenFiles option unexpectedly filters that link.
+                    if manager.fileExists(atPath: url.path) { applicationURLs.append(url) }
+                    continue
+                }
+                guard depth < 3,
+                      let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]),
+                      values.isDirectory == true, values.isSymbolicLink != true else { continue }
+                directories.append((url, depth + 1))
+            }
+        }
+        let applicationsCount = applicationURLs.count
+        // Finder presents these system apps inside its Utilities folder too.
+        let systemUtilities = URL(fileURLWithPath: "/System/Applications/Utilities", isDirectory: true)
+        if let children = try? manager.contentsOfDirectory(at: systemUtilities,
+            includingPropertiesForKeys: nil, options: []) {
+            applicationURLs += children.filter {
+                !$0.lastPathComponent.hasPrefix(".") &&
+                $0.pathExtension.lowercased() == "app" &&
+                manager.fileExists(atPath: $0.path)
+            }
+        }
+        return (applicationURLs, applicationsCount)
     }
 
     private static func visibleName(at url: URL, bundle: Bundle?, manager: FileManager) -> String {
@@ -1173,6 +1187,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             return
         }
         closeSettingsPanel()
+        if AppCatalog.installedApplicationsChanged() { model.reloadCatalog() }
         grid.resetPointerGestures()
         if let screen = preferredScreen() { updateScreenGeometry(for: screen) }
         search.stringValue = ""
