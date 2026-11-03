@@ -466,14 +466,16 @@ final class PageIndicatorView: NSView {
 }
 
 final class GridView: NSView {
-    var tiles: [DisplayTile] = [] { didSet { resetPointerGestures(); page = 0; needsDisplay = true } }
+    var tiles: [DisplayTile] = [] { didSet { resetPointerGestures(); deleteTargetID = nil; page = 0; needsDisplay = true } }
     var statusMessage: String? { didSet { needsDisplay = true } }
-    var page = 0 { didSet { needsDisplay = true; onPageChanged?() } }
+    var page = 0 { didSet { deleteTargetID = nil; needsDisplay = true; onPageChanged?() } }
     var layout: GridLayout = .fiveBySeven { didSet { page = 0; needsDisplay = true } }
     var layoutLocked = false
     var onSelect: ((DisplayTile) -> Void)?
     var onDrop: ((DisplayTile, DisplayTile?, Bool) -> Void)?
     var onContext: ((DisplayTile, NSEvent) -> Void)?
+    var canDelete: ((DisplayTile) -> Bool)?
+    var onDelete: ((DisplayTile) -> Void)?
     var onDismiss: (() -> Void)?
     var onCloseFolder: (() -> Void)?
     var onPageChanged: (() -> Void)?
@@ -486,6 +488,12 @@ final class GridView: NSView {
     private var threeFingerSwipe = ThreeFingerSwipeState()
     private var lastTrackpadPageAt: TimeInterval = -.infinity
     private var scrollState = PageScrollState()
+    private var longPressTimer: Timer?
+    private var deleteTargetID: String?
+    private var deleteClickID: String?
+    private var longPressActivated = false
+    private var pressPoint: NSPoint = .zero
+    private var pressTime: TimeInterval = 0
     private var isDark: Bool {
         effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
     }
@@ -579,6 +587,27 @@ final class GridView: NSView {
         return tileFrames(x: x, y: y, cellW: cellW, cellH: cellH)
     }
 
+    fileprivate func deleteButtonRect(for index: Int) -> NSRect {
+        let icon = tileRects(forTileAt: index).0
+        return NSRect(x: icon.maxX - 15, y: icon.maxY - 9, width: 24, height: 24)
+    }
+
+    private func deleteButtonIndex(at point: NSPoint) -> Int? {
+        guard let id = deleteTargetID else { return nil }
+        let start = page * pageSize
+        let end = min(start + pageSize, tiles.count)
+        return (start..<end).first { tiles[$0].ref.id == id &&
+            deleteButtonRect(for: $0).insetBy(dx: -4, dy: -4).contains(point) }
+    }
+
+    private func activateDelete(for index: Int) {
+        guard index < tiles.count, tiles[index].ref.kind == "app",
+              canDelete?(tiles[index]) == true else { return }
+        deleteTargetID = tiles[index].ref.id
+        longPressActivated = true
+        needsDisplay = true
+    }
+
     private func tileFrames(x: CGFloat, y: CGFloat, cellW: CGFloat, cellH: CGFloat) -> (NSRect, NSRect) {
         let labelHeight = min(30, max(20, cellH * 0.17))
         let gap = min(8, max(3, cellH * 0.04))
@@ -634,6 +663,20 @@ final class GridView: NSView {
                                              width: miniSize, height: miniSize))
                     }
                 } else { tile.icons.first?.draw(in: iconRect) }
+                if deleteTargetID == tile.ref.id && tile.ref.kind == "app" {
+                    let badge = deleteButtonRect(for: index)
+                    NSColor(calibratedRed: 0.88, green: 0.20, blue: 0.19, alpha: 1).setFill()
+                    NSBezierPath(ovalIn: badge).fill()
+                    NSColor.white.setStroke()
+                    let cross = NSBezierPath()
+                    cross.move(to: NSPoint(x: badge.minX + 7, y: badge.minY + 7))
+                    cross.line(to: NSPoint(x: badge.maxX - 7, y: badge.maxY - 7))
+                    cross.move(to: NSPoint(x: badge.minX + 7, y: badge.maxY - 7))
+                    cross.line(to: NSPoint(x: badge.maxX - 7, y: badge.minY + 7))
+                    cross.lineWidth = 2.5
+                    cross.lineCapStyle = .round
+                    cross.stroke()
+                }
                 let paragraph = NSMutableParagraphStyle()
                 paragraph.alignment = .center
                 paragraph.lineBreakMode = .byTruncatingTail
@@ -665,20 +708,63 @@ final class GridView: NSView {
 
     override func mouseDown(with event: NSEvent) {
         let p = convert(event.locationInWindow, from: nil)
+        if let index = deleteButtonIndex(at: p) {
+            deleteClickID = tiles[index].ref.id
+            return
+        }
+        if deleteTargetID != nil {
+            deleteTargetID = nil
+            needsDisplay = true
+            return
+        }
         mouseDrag.begin(at: p, source: interactiveTileIndex(at: p), time: event.timestamp)
+        pressPoint = p
+        pressTime = event.timestamp
+        longPressActivated = false
+        if let source = mouseDrag.source, tiles[source].ref.kind == "app",
+           canDelete?(tiles[source]) == true {
+            longPressTimer?.invalidate()
+            longPressTimer = Timer.scheduledTimer(withTimeInterval: 0.65, repeats: false) { [weak self] _ in
+                guard let self, self.mouseDrag.isActive, !self.mouseDrag.moved,
+                      self.mouseDrag.source == source else { return }
+                self.activateDelete(for: source)
+            }
+        }
     }
 
     override func mouseDragged(with event: NSEvent) {
         let point = convert(event.locationInWindow, from: nil)
+        if hypot(point.x - pressPoint.x, point.y - pressPoint.y) > 8 {
+            longPressTimer?.invalidate()
+            longPressActivated = false
+            if deleteTargetID != nil { deleteTargetID = nil; needsDisplay = true }
+        }
         if let direction = mouseDrag.direction(at: point, time: event.timestamp, layoutLocked: layoutLocked) {
             goToPage(page + direction)
         }
     }
 
     override func mouseUp(with event: NSEvent) {
+        if let id = deleteClickID {
+            deleteClickID = nil
+            let point = convert(event.locationInWindow, from: nil)
+            if let index = deleteButtonIndex(at: point), tiles[index].ref.id == id {
+                deleteTargetID = nil
+                needsDisplay = true
+                onDelete?(tiles[index])
+            }
+            return
+        }
+        longPressTimer?.invalidate()
         guard mouseDrag.isActive else { return }
         let point = convert(event.locationInWindow, from: nil)
         defer { mouseDrag = MousePageDragState() }
+        if !mouseDrag.moved, let source = mouseDrag.source,
+           event.timestamp - pressTime >= 0.65, canDelete?(tiles[source]) == true {
+            activateDelete(for: source)
+            return
+        }
+        if longPressActivated { return }
         if let direction = mouseDrag.direction(at: point, time: event.timestamp, layoutLocked: layoutLocked) {
             goToPage(page + direction)
         }
@@ -752,6 +838,11 @@ final class GridView: NSView {
     }
 
     func resetPointerGestures() {
+        longPressTimer?.invalidate()
+        longPressTimer = nil
+        deleteClickID = nil
+        deleteTargetID = nil
+        longPressActivated = false
         mouseDrag = MousePageDragState()
         threeFingerSwipe.reset()
         lastTrackpadPageAt = -.infinity
@@ -847,6 +938,15 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         grid.onContext = { [weak self] tile, event in
             guard let self, self.settingsPanel?.isVisible != true else { return }
             self.showContextMenu(tile, event: event)
+        }
+        grid.canDelete = { [weak self] tile in
+            guard let self, let app = self.model?.apps[tile.ref.id] else { return false }
+            return self.canTrash(app.url)
+        }
+        grid.onDelete = { [weak self] tile in
+            guard let self else { return }
+            self.contextRef = tile.ref
+            self.contextTrash(nil)
         }
         wallpaperView = WallpaperView(frame: NSRect(origin: .zero, size: frame.size))
         window.contentView = wallpaperView
@@ -2008,6 +2108,17 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
             grid.mouseDragged(with: event(.leftMouseDragged, dropPoint, 3.5))
             grid.mouseUp(with: event(.leftMouseUp, dropPoint, 3.6))
             guard grid.page == 0, dropped == 1 else { fatalError("Icon hold-and-drag must rearrange") }
+            var deleted = 0
+            grid.canDelete = { _ in true }
+            grid.onDelete = { _ in deleted += 1 }
+            grid.mouseDown(with: event(.leftMouseDown, icon, 4))
+            grid.mouseUp(with: event(.leftMouseUp, icon, 4.8))
+            guard selected == 0 else { fatalError("Long press opened the app") }
+            let badge = grid.deleteButtonRect(for: 0)
+            let badgePoint = NSPoint(x: badge.midX, y: badge.midY)
+            grid.mouseDown(with: event(.leftMouseDown, badgePoint, 5))
+            grid.mouseUp(with: event(.leftMouseUp, badgePoint, 5.1))
+            guard deleted == 1, selected == 0 else { fatalError("Long-press delete button failed") }
             let (_, name) = grid.tileRects(forTileAt: 0)
             let nameGap = firstIcon.minY - name.maxY
             let standardSpacing = secondIcon.midX - firstIcon.midX

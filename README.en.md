@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.45**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.46**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
 
 ## Compatibility reports
 
@@ -31,7 +31,7 @@ The files in the installation package retain their Simplified Chinese names, inc
 - Open from the Dock, menu bar, a recordable global keyboard shortcut, or a hot corner.
 - Settings provide Light, Dark, and Follow System themes, Launch at Login, and the option to show or hide the menu bar icon. The interface can follow the system language or use Simplified Chinese, Traditional Chinese, or English.
 - **Check for Updates** in Settings queries the latest GitHub release, downloads a newer DMG, checks its SHA-256, app version, and code signature, then replaces the installed app and opens the new version. A failed check leaves the current version in place.
-- Click the background outside the grid or press Escape to close the launcher. Context menus let you open, rename, hide, or reveal apps in Finder. Third-party apps can also be moved to the Trash when permissions allow.
+- Click the background outside the grid or press Escape to close the launcher. Hold a removable app icon for about 0.65 seconds to show an × in its upper-right corner; click it and confirm to move the app to the Trash. System apps do not show a delete button. Context menus also let you open, rename, hide, or reveal apps in Finder.
 - The Light theme uses a transparent window with system frosted glass to show the desktop underneath, including dynamic wallpapers. The Dark theme blurs the desktop wallpaper inside the window. The background is separate from the icon page animation, and the window adapts to display size changes.
 - **Completely Uninstall Launchpad…** removes the app, Dock icon, login item, and local settings.
 - A colorful nine-square app icon, with regenerated `.icns` resources to fix malformed small icons that may appear in Finder's Applications list.
