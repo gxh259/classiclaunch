@@ -114,3 +114,15 @@
 "正在退出旧版并更新启动台…" = "Quitting the old version and updating Launchpad…";
 "正在安装启动台…" = "Installing Launchpad…";
 "无法安装启动台" = "Could Not Install Launchpad";
+"软件更新" = "Software Update";
+"检测更新" = "Check for Updates";
+"正在检测更新…" = "Checking for Updates…";
+"已是最新版本" = "Already Up to Date";
+"当前版本 %@，GitHub 最新版本 %@。" = "Current version: %@. Latest GitHub version: %@.";
+"正在下载并安装启动台 %@…" = "Downloading and installing Launchpad %@…";
+"无法更新启动台" = "Could Not Update Launchpad";
+"无法读取 GitHub 的版本信息。" = "Could not read release information from GitHub.";
+"最新版本没有可用的 DMG 安装包。" = "The latest release has no usable DMG installer.";
+"下载的安装包与 GitHub 发布信息不一致。" = "The downloaded installer does not match the GitHub release.";
+"无法打开下载的 DMG 安装包。" = "Could not open the downloaded DMG installer.";
+"安装包中的应用未通过签名或版本校验。" = "The app in the installer failed signature or version verification.";

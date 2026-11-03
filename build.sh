@@ -29,6 +29,7 @@ build_arch() {
     Sources/LoginStartup.swift \
     Sources/DockIconCleanup.swift \
     Sources/AppInstaller.swift \
+    Sources/UpdateService.swift \
     Sources/LauncherModel.swift \
     Sources/Hotkey.swift \
     Sources/PageGestures.swift \

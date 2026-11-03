@@ -806,6 +806,7 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     private var cornerArmed = true
     private var scanFeedbackTimer: Timer?
     private var installationPanel: NSPanel?
+    private var updateInProgress = false
     fileprivate var pendingShow = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -1412,6 +1413,9 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
         row(L("触发角"), control: cornerPopup)
 
         section(L("系统"))
+        let updateButton = button(L("检测更新"), action: #selector(checkForUpdates(_:)))
+        updateButton.isEnabled = !updateInProgress
+        row(L("软件更新"), control: updateButton)
         row(L("登录项"), control: button(L("打开系统登录项设置…"), action: #selector(openLoginItemsSettings(_:))))
         row(L("应用数据"), control: button(L("打开数据文件夹"), action: #selector(openDataFolder(_:))))
         row(L("卸载"), control: button(L("完全卸载启动台…"), action: #selector(uninstallLauncher(_:))))
@@ -1435,6 +1439,86 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
     }
 
     private func closeSettingsPanel() { settingsPanel?.close() }
+
+    @objc private func checkForUpdates(_ sender: Any?) {
+        guard !updateInProgress else { return }
+        updateInProgress = true
+        (sender as? NSButton)?.isEnabled = false
+        (sender as? NSButton)?.title = L("正在检测更新…")
+        UpdateService.check { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                switch result {
+                case .failure(let error):
+                    self.finishUpdate(with: error)
+                case .success(let release):
+                    let current = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0"
+                    guard UpdateService.isNewer(release.version, than: current) else {
+                        self.updateInProgress = false
+                        self.scheduleSettingsPanelRefresh()
+                        self.showUpdateAlert(title: L("已是最新版本"),
+                                             message: Localization.format("当前版本 %@，GitHub 最新版本 %@。",
+                                                                          current, release.version))
+                        return
+                    }
+                    self.beginUpdate(release)
+                }
+            }
+        }
+    }
+
+    private func beginUpdate(_ release: UpdateRelease) {
+        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 410, height: 112),
+                            styleMask: [.titled], backing: .buffered, defer: false)
+        panel.title = L("更新启动台")
+        panel.level = NSWindow.Level(rawValue: window.level.rawValue + 2)
+        panel.setFrameOrigin(NSPoint(x: window.frame.midX - 205, y: window.frame.midY - 56))
+        panel.isReleasedWhenClosed = false
+        let spinner = NSProgressIndicator(frame: NSRect(x: 24, y: 39, width: 30, height: 30))
+        spinner.style = .spinning
+        spinner.startAnimation(nil)
+        panel.contentView?.addSubview(spinner)
+        let label = NSTextField(labelWithString:
+            Localization.format("正在下载并安装启动台 %@…", release.version))
+        label.frame = NSRect(x: 67, y: 41, width: 325, height: 25)
+        panel.contentView?.addSubview(label)
+        panel.makeKeyAndOrderFront(nil)
+        installationPanel = panel
+        UpdateService.downloadAndInstall(release) { [weak self] result in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.installationPanel?.close()
+                self.installationPanel = nil
+                switch result {
+                case .failure(let error): self.finishUpdate(with: error)
+                case .success(let installedURL):
+                    let configuration = NSWorkspace.OpenConfiguration()
+                    configuration.createsNewApplicationInstance = true
+                    NSWorkspace.shared.openApplication(at: installedURL, configuration: configuration) { _, error in
+                        DispatchQueue.main.async {
+                            if let error { self.finishUpdate(with: error) }
+                            else { NSApp.terminate(nil) }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func finishUpdate(with error: Error) {
+        updateInProgress = false
+        scheduleSettingsPanelRefresh()
+        showUpdateAlert(title: L("无法更新启动台"), message: error.localizedDescription)
+    }
+
+    private func showUpdateAlert(title: String, message: String) {
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = message
+        alert.addButton(withTitle: L("完成"))
+        if let settingsPanel, settingsPanel.isVisible { alert.beginSheetModal(for: settingsPanel) }
+        else { alert.runModal() }
+    }
 
     @objc private func closeSettingsAction(_ sender: Any?) { closeSettingsPanel() }
 
