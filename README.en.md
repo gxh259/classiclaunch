@@ -2,16 +2,9 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.47**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.47**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0.
 
-## Compatibility reports
-
-| Device and system | Known result |
-| --- | --- |
-| Apple M1 / macOS 27.0 | v0.43 was installed and verified to run normally. |
-| Apple M4 / macOS 15.3 | v0.43 was installed and verified to run normally. |
-| Apple M4 / macOS 26.5 | v0.43 was installed and verified to run normally. |
-| Intel | x86_64 self-tests have passed through Rosetta; execution on a physical Intel Mac has not yet been verified. |
+## Troubleshooting
 
 If the app will not open, preserve your personal app data and run these two Terminal commands on the affected Mac. Save their complete output; the first checks the installed app's signature, and the second may show the specific launch error:
 
