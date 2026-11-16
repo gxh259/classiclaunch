@@ -2,7 +2,7 @@
 
 [简体中文](README.md) · [繁體中文](README.zh-Hant.md) · **English**
 
-A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.46**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
+A macOS application launcher built with Swift and AppKit. It offers a full-screen app grid, search, folders, pagination, and several ways to open the launcher for people who prefer the classic Launchpad layout. The current version is **0.47**, distributed as a **universal app for Apple silicon (arm64) and Intel (x86_64)**. Drag the app in the DMG to Applications to install it, or double-click it for automatic installation or an update. The minimum deployment target is macOS 15.0. See the compatibility reports below for observed results.
 
 ## Compatibility reports
 
@@ -26,7 +26,7 @@ The files in the installation package retain their Simplified Chinese names, inc
 
 - Full-screen app grid and search. Icon size, label size, and row spacing adapt to the available screen area, keeping the built-in display compact and enlarging icons on external displays. The search field and its Settings and Rescan buttons are repositioned together when the display changes. Also supports drag-to-reorder, folder creation and renaming, hidden apps, and custom app names.
 - Choose a 5×7, 6×8, 7×8, or 7×9 grid, or enter a custom layout of 2–12 rows and 3–16 columns in Settings. Existing saved 7×7 layouts remain available as custom layouts. Switch pages by dragging horizontally with the left mouse button, swiping horizontally with three fingers on a trackpad, using the scroll wheel or arrow keys, or clicking the fixed page dots at the bottom.
-- Scan apps from `/Applications`, preferring names that match the system language. Apps in Finder's Utilities folder are grouped into an **Other** folder. Rescan manually or optionally supplement system apps using the Dock Launchpad database.
+- Scan apps from `/Applications` and `/System/Applications`, including built-in Calculator, preferring names that match the system language. Apps in Finder's Utilities folder are grouped into an **Other** folder. Rescan manually or optionally supplement system apps using the Dock Launchpad database.
 - Check for added or removed apps before each opening and rescan automatically when the app directories change, keeping the existing icon order and folders. Manual **Rescan Apps** remains available to force a refresh.
 - Open from the Dock, menu bar, a recordable global keyboard shortcut, or a hot corner.
 - Settings provide Light, Dark, and Follow System themes, Launch at Login, and the option to show or hide the menu bar icon. The interface can follow the system language or use Simplified Chinese, Traditional Chinese, or English.
@@ -114,6 +114,6 @@ The installation packages no longer include the leftover cleanup script. If an o
 
 ## Implementation Notes
 
-App scanning primarily uses `/Applications` and also includes the system Utilities directories. Localized app bundle names take priority over English names inside bundles; user-defined aliases have the highest priority. The Dock Launchpad database is an optional, read-only supplemental source. If the database is missing or its structure is incompatible, it is skipped. The app does not modify system files.
+App scanning primarily uses `/Applications` and also reads `/System/Applications` and its Utilities directory. If the same app appears under `/Applications`, that path takes priority to avoid a duplicate icon. Localized app bundle names take priority over English names inside bundles; user-defined aliases have the highest priority. The Dock Launchpad database is an optional, read-only supplemental source. If the database is missing or its structure is incompatible, it is skipped. The app does not modify system files.
 
 Source code is in `Sources/`. The app's `Info.plist`, localization resources, and original PNG icon are in `Resources/`. The build script generates `.icns` resources from the PNG, including clear large images that Finder can scale to list sizes. The main executable includes command line self-tests for language, icon ordering, pagination, and Dock icon cleanup. Run them with `dist/启动台.app/Contents/MacOS/ClassicLaunchpad --self-test-language`, `--self-test-indicator`, `--self-test-scroll`, `--self-test-gestures`, or `--self-test-dock-cleanup`.

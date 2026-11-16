@@ -245,11 +245,13 @@ final class AppCatalog {
         return Set(urls.map { $0.standardizedFileURL.path }) != loadedApplicationPaths
     }
 
-    private static func installedApplicationURLs() -> ([URL], Int) {
+    static func installedApplicationURLs(
+        applicationRoot: URL = URL(fileURLWithPath: "/Applications", isDirectory: true),
+        systemRoot: URL = URL(fileURLWithPath: "/System/Applications", isDirectory: true)
+    ) -> ([URL], Int) {
         let manager = FileManager.default
-        let rootURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
         var applicationURLs: [URL] = []
-        var directories: [(URL, Int)] = [(rootURL, 0)]
+        var directories: [(URL, Int)] = [(applicationRoot, 0)]
         while let (directory, depth) = directories.popLast() {
             guard let children = try? manager.contentsOfDirectory(at: directory,
                 includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
@@ -269,14 +271,21 @@ final class AppCatalog {
             }
         }
         let applicationsCount = applicationURLs.count
-        // Finder presents these system apps inside its Utilities folder too.
-        let systemUtilities = URL(fileURLWithPath: "/System/Applications/Utilities", isDirectory: true)
-        if let children = try? manager.contentsOfDirectory(at: systemUtilities,
-            includingPropertiesForKeys: nil, options: []) {
-            applicationURLs += children.filter {
-                !$0.lastPathComponent.hasPrefix(".") &&
-                $0.pathExtension.lowercased() == "app" &&
-                manager.fileExists(atPath: $0.path)
+        // Finder's Applications view also includes system apps. Calculator and
+        // other built-ins need a direct scan when the old Dock database is absent.
+        // Prefer an /Applications entry with the same bundle ID (for example,
+        // Safari's symlink) so the same app does not appear twice.
+        var knownBundleIDs = Set(applicationURLs.compactMap { Bundle(url: $0)?.bundleIdentifier })
+        for directory in [systemRoot, systemRoot.appendingPathComponent("Utilities", isDirectory: true)] {
+            guard let children = try? manager.contentsOfDirectory(at: directory,
+                includingPropertiesForKeys: nil, options: []) else { continue }
+            for url in children where !url.lastPathComponent.hasPrefix(".") &&
+                                      url.pathExtension.lowercased() == "app" &&
+                                      manager.fileExists(atPath: url.path) {
+                if let bundleID = Bundle(url: url)?.bundleIdentifier {
+                    guard knownBundleIDs.insert(bundleID).inserted else { continue }
+                }
+                applicationURLs.append(url)
             }
         }
         return (applicationURLs, applicationsCount)
@@ -1942,6 +1951,43 @@ final class LauncherController: NSObject, NSApplicationDelegate, NSSearchFieldDe
 
 @main struct Main {
     static func main() {
+        if CommandLine.arguments.contains("--self-test-catalog") {
+            let manager = FileManager.default
+            let root = manager.temporaryDirectory.appendingPathComponent(
+                "classic-launchpad-catalog-test-\(UUID().uuidString)", isDirectory: true)
+            defer { try? manager.removeItem(at: root) }
+            let applications = root.appendingPathComponent("Applications", isDirectory: true)
+            let system = root.appendingPathComponent("System/Applications", isDirectory: true)
+            func fixture(_ directory: URL, _ name: String, _ identifier: String) throws -> URL {
+                let app = directory.appendingPathComponent("\(name).app", isDirectory: true)
+                let contents = app.appendingPathComponent("Contents", isDirectory: true)
+                try manager.createDirectory(at: contents, withIntermediateDirectories: true)
+                let plist = try PropertyListSerialization.data(fromPropertyList: [
+                    "CFBundleIdentifier": identifier, "CFBundlePackageType": "APPL"
+                ], format: .xml, options: 0)
+                try plist.write(to: contents.appendingPathComponent("Info.plist"))
+                return app
+            }
+            do {
+                let calculator = try fixture(system, "Calculator", "com.apple.calculator")
+                let safari = try fixture(applications, "Safari", "com.apple.Safari")
+                _ = try fixture(system, "Safari", "com.apple.Safari")
+                let utility = try fixture(system.appendingPathComponent("Utilities", isDirectory: true),
+                                          "Terminal", "com.apple.Terminal")
+                let (urls, applicationsCount) = AppCatalog.installedApplicationURLs(
+                    applicationRoot: applications, systemRoot: system)
+                let paths = Set(urls.map { $0.standardizedFileURL.path })
+                guard applicationsCount == 1,
+                      paths.contains(calculator.standardizedFileURL.path),
+                      paths.contains(safari.standardizedFileURL.path),
+                      paths.contains(utility.standardizedFileURL.path),
+                      paths.count == 3 else {
+                    fatalError("System app scan failed: /Applications=\(applicationsCount), paths=\(paths)")
+                }
+            } catch { fatalError("Catalog self-test failed: \(error)") }
+            print("Catalog self-test passed")
+            return
+        }
         if CommandLine.arguments.contains("--self-test-dock-cleanup") {
             let suite = "local.codex.classiclaunchpad.dock-test.\(UUID().uuidString)"
             let defaults = UserDefaults(suiteName: suite)!
